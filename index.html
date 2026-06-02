@@ -354,7 +354,7 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">Narration / Context / Particular Statement</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Narration / Particular Statement</label>
                     <input type="text" id="jv-desc" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none" placeholder="Being payment made towards...">
                 </div>
                 <div>
@@ -503,7 +503,7 @@
             });
         }
 
-        // MASTER LEDGER: CREATE OR ALTER/EDIT RULE LOGIC
+        // MASTER LEDGER: CREATE OR ALTER/EDIT
         async function saveLedgerMaster(event) {
             event.preventDefault();
             const id = document.getElementById('m-ledger-id').value;
@@ -515,7 +515,6 @@
 
             let finalId = id;
             if (!finalId) {
-                // Creating a new ledger
                 let groupPrefix = "4";
                 if(type === "ASSET") groupPrefix = "1";
                 if(type === "LIABILITY") groupPrefix = "2";
@@ -531,14 +530,13 @@
             }
 
             const ledgerPayload = { id: finalId, name: name, type: type, openingBalance: openingBalance };
-            
             await saveRecordToDB("accounts", ledgerPayload);
             
             const existingIndex = chartOfAccountsArray.findIndex(a => a.id === finalId);
             if (existingIndex > -1) {
-                chartOfAccountsArray[existingIndex] = ledgerPayload; // Alter mode update
+                chartOfAccountsArray[existingIndex] = ledgerPayload;
             } else {
-                chartOfAccountsArray.push(ledgerPayload); // New creation layout
+                chartOfAccountsArray.push(ledgerPayload);
             }
 
             resetLedgerFormState();
@@ -572,7 +570,7 @@
         async function purgeLedgerMasterAccount(id) {
             const hasUsage = globalJournalVouchers.some(j => j.drAccountId === id || j.crAccountId === id);
             if(hasUsage) {
-                alert("Accounting Balance Sheet Rule: This master cannot be deleted because vouchers have been assigned to it.");
+                alert("Accounting Restriction: This master cannot be deleted because active vouchers exist.");
                 return;
             }
             if(confirm("Confirm ledger master deletion?")) {
@@ -586,34 +584,41 @@
             document.getElementById('jv-cr-amount').value = document.getElementById('jv-dr-amount').value;
         }
 
-        // TALLY COMPUTATION SYSTEM ENGINE FOR DR & CR INCLUSIONS
+        // **FIXED CRITICAL BALANCING ENGINE MATRIX**
         function calculateLedgerBalances() {
             const balances = {};
             
-            // Step 1: Base initialization incorporating user defined Opening Balances
+            // Step 1: Initialize Opening Balances
             chartOfAccountsArray.forEach(acc => {
                 balances[acc.id] = parseFloat(acc.openingBalance || 0);
             });
 
-            // Step 2: Calculate operational increments/decrements
+            // Step 2: Loop through Journal Vouchers explicitly
             globalJournalVouchers.forEach(jv => {
                 const drAcc = chartOfAccountsArray.find(a => a.id === jv.drAccountId);
                 const crAcc = chartOfAccountsArray.find(a => a.id === jv.crAccountId);
                 const amt = parseFloat(jv.amount);
 
+                // FIXED: Isolated conditions avoid double-loop calculations if drAccountId === crAccountId
                 if (drAcc) {
-                    if (drAcc.type === 'ASSET' || drAcc.type === 'EXPENSE') balances[jv.drAccountId] = (balances[jv.drAccountId] || 0) + amt;
-                    else balances[jv.drAccountId] = (balances[jv.drAccountId] || 0) - amt;
+                    if (drAcc.type === 'ASSET' || drAcc.type === 'EXPENSE') {
+                        balances[jv.drAccountId] += amt;
+                    } else {
+                        balances[jv.drAccountId] -= amt;
+                    }
                 }
                 if (crAcc) {
-                    if (crAcc.type === 'LIABILITY' || crAcc.type === 'EQUITY' || crAcc.type === 'REVENUE') balances[jv.crAccountId] = (balances[jv.crAccountId] || 0) + amt;
-                    else balances[jv.crAccountId] = (balances[jv.crAccountId] || 0) - amt;
+                    if (crAcc.type === 'LIABILITY' || crAcc.type === 'EQUITY' || crAcc.type === 'REVENUE') {
+                        balances[jv.crAccountId] += amt;
+                    } else {
+                        balances[jv.crAccountId] -= amt;
+                    }
                 }
             });
             return balances;
         }
 
-        // GENERATE REAL-TIME STATEMENTS
+        // GENERATE FINANCIAL STATEMENTS
         function refreshFinancialStatementsEngine() {
             const ledgerBalances = calculateLedgerBalances();
             rebuildUiVoucherDropdownsAndLists();
@@ -639,7 +644,7 @@
             const profitLabel = document.getElementById('metric-net-profit').parentElement;
             profitLabel.firstElementChild.innerText = netProfitSurplus < 0 ? "Net Deficit / Loss" : "Net Profit / Surplus";
 
-            // Dashboard Current Positions
+            // Dashboard Current Balances
             const cashContainer = document.getElementById('dash-cash-balances');
             cashContainer.innerHTML = '';
             chartOfAccountsArray.filter(a => a.type === 'ASSET').forEach(acc => {
@@ -779,14 +784,13 @@
             const tbody = document.getElementById('ledger-trace-tbody');
             tbody.innerHTML = '';
 
-            // Render Beginning line row if non-zero setup
             if (parseFloat(accountRef.openingBalance || 0) !== 0) {
                 const op = parseFloat(accountRef.openingBalance);
                 const isDebitGroup = (accountRef.type === 'ASSET' || accountRef.type === 'EXPENSE');
                 tbody.innerHTML += `
                     <tr class="bg-indigo-50/20 border-b border-slate-100 text-xs italic">
                         <td class="p-4 text-slate-400">-</td>
-                        <td class="p-4 font-semibold text-slate-700">To/By Opening Balance Migration</td>
+                        <td class="p-4 font-semibold text-slate-700">Opening Balance</td>
                         <td class="p-4 text-right font-bold privacy-target">${isDebitGroup ? `₹${op.toLocaleString('en-IN')}` : '-'}</td>
                         <td class="p-4 text-right font-bold privacy-target">${!isDebitGroup ? `₹${op.toLocaleString('en-IN')}` : '-'}</td>
                     </tr>
@@ -797,7 +801,7 @@
             const chronologicalLineItems = [...activeTraceArray].reverse();
 
             if(chronologicalLineItems.length === 0 && parseFloat(accountRef.openingBalance || 0) === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-xs text-slate-400">No transactions posted to this ledger account yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-xs text-slate-400">No transactions posted yet.</td></tr>`;
                 return;
             }
 
@@ -890,7 +894,7 @@
             }
         }
 
-        // VOUCHER MANAGEMENT ALTERATION SUBSYSTEMS
+        // VOUCHER MANAGEMENT
         function openJournalModal() {
             document.getElementById('journalForm').reset();
             document.getElementById('jv-id').value = '';
@@ -975,8 +979,8 @@
             await saveRecordToDB("journals", jvPayload);
             
             const idx = globalJournalVouchers.findIndex(j => j.id === finalId);
-            if(idx > -1) globalJournalVouchers[idx] = jvPayload; // Alter mode swap
-            else globalJournalVouchers.unshift(jvPayload); // New creation attach
+            if(idx > -1) globalJournalVouchers[idx] = jvPayload;
+            else globalJournalVouchers.unshift(jvPayload);
 
             closeJournalModal();
             refreshFinancialStatementsEngine();
@@ -994,7 +998,6 @@
             if (runtimeActiveTab === 'ledgers') renderIndividualLedgerTrace();
         }
 
-        // PERSISTENT FILE OPERATIONS
         function handleFileProcessing(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1100,7 +1103,7 @@
                             alert("Accounting workspace restored successfully!");
                             window.location.reload();
                         }
-                    } else { alert("Invalid architecture JSON format."); }
+                    } else { alert("Invalid format."); }
                 } catch(err) { alert("Error reading system backup maps."); }
             };
             reader.readAsText(file);
