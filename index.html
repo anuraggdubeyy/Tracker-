@@ -45,6 +45,9 @@
             <button onclick="switchTab('dashboard')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition bg-indigo-50 text-indigo-600" id="tab-dashboard">
                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
             </button>
+            <button onclick="switchTab('chartofaccounts')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50" id="tab-chartofaccounts">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Create Ledger (Masters)
+            </button>
             <button onclick="switchTab('journal')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50" id="tab-journal">
                 <i data-lucide="book-text" class="w-4 h-4"></i> Journal Entries
             </button>
@@ -67,7 +70,7 @@
 
     <nav class="mobile-bottom-nav fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-40 hidden justify-around items-center py-2 shadow-lg">
         <button onclick="switchTab('dashboard')" class="flex flex-col items-center gap-0.5 text-indigo-600" id="m-tab-dashboard"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="text-[10px] font-medium">Home</span></button>
-        <button onclick="switchTab('journal')" class="flex flex-col items-center gap-0.5 text-slate-400" id="m-tab-journal"><i data-lucide="book-text" class="w-5 h-5"></i><span class="text-[10px] font-medium">Journal</span></button>
+        <button onclick="switchTab('chartofaccounts')" class="flex flex-col items-center gap-0.5 text-slate-400" id="m-tab-chartofaccounts"><i data-lucide="plus-circle" class="w-5 h-5"></i><span class="text-[10px] font-medium">Masters</span></button>
         <button onclick="openJournalModal()" class="flex flex-col items-center justify-center -mt-6 bg-indigo-600 text-white rounded-full p-3.5 shadow-md shadow-indigo-200"><i data-lucide="plus" class="w-6 h-6"></i></button>
         <button onclick="switchTab('pl')" class="flex flex-col items-center gap-0.5 text-slate-400" id="m-tab-pl"><i data-lucide="scale" class="w-5 h-5"></i><span class="text-[10px] font-medium">P&L</span></button>
         <button onclick="switchTab('bs')" class="flex flex-col items-center gap-0.5 text-slate-400" id="m-tab-bs"><i data-lucide="building" class="w-5 h-5"></i><span class="text-[10px] font-medium">B/S</span></button>
@@ -112,11 +115,11 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-                        <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2"><i data-lucide=" Landmark" class="w-4 h-4 text-indigo-500"></i> Cash & Bank Balances</h3>
+                        <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2"><i data-lucide="landmark" class="w-4 h-4 text-indigo-500"></i> Active Current Liquid Asset Balances</h3>
                         <div class="space-y-3" id="dash-cash-balances"></div>
                     </div>
                     <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-                        <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2"><i data-lucide="pie-chart" class="w-4 h-4 text-rose-500"></i> Expense Burn Rate Overview</h3>
+                        <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2"><i data-lucide="pie-chart" class="w-4 h-4 text-rose-500"></i> Top Operating Expenses Overview</h3>
                         <div class="space-y-3" id="dash-expense-breakdown"></div>
                     </div>
                 </div>
@@ -140,6 +143,37 @@
                             </thead>
                             <tbody id="dashboard-journal-tbody"></tbody>
                         </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-chartofaccounts" class="view-panel space-y-6 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-4 h-fit">
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2"><i data-lucide="plus-circle" class="text-indigo-600"></i> Accounts Info > Ledger > Create</h3>
+                        <form id="ledgerMasterForm" onsubmit="createNewLedgerMaster(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-1">Ledger Account Name</label>
+                                <input type="text" id="m-ledger-name" required placeholder="e.g., Mahesh A/c or Smoking Expense" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-1">Under Group (Account Type)</label>
+                                <select id="m-ledger-type" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                                    <option value="ASSET">Asset (Bank, Cash, Debtors)</option>
+                                    <option value="LIABILITY">Liability (Creditors, Loans Borrowed)</option>
+                                    <option value="EQUITY">Equity (Capital Account)</option>
+                                    <option value="REVENUE">Revenue (Income, Salary, Fees)</option>
+                                    <option value="EXPENSE">Expense (Smoking, Food, Rent)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-xl text-xs transition">Create Master Ledger</button>
+                        </form>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm md:col-span-2 space-y-4">
+                        <h3 class="text-base font-bold text-slate-900">List of Ledger Accounts (Chart of Accounts)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="master-coa-tree-list">
+                            </div>
                     </div>
                 </div>
             </section>
@@ -345,27 +379,17 @@
     </div>
 
     <script>
-        // CHART OF ACCOUNTS DEFINITION - MASTER REFERENCE ARRAY
-        const CHART_OF_ACCOUNTS = [
-            // ASSETS (Normal Balance: DEBIT)
+        // CORE INITIAL BASE CHART OF ACCOUNTS (Fallback seeds if database is totally empty)
+        const DEFAULT_SEED_ACCOUNTS = [
             { id: '1010', name: 'Primary Bank Account', type: 'ASSET' },
             { id: '1020', name: 'Physical Cash Vault', type: 'ASSET' },
-            { id: '1030', name: 'UPI Digital Wallet', type: 'ASSET' },
-            { id: '1040', name: 'Loans & Advances (Lent)', type: 'ASSET' },
-            // LIABILITIES & EQUITY (Normal Balance: CREDIT)
             { id: '2010', name: 'Capital Account Equity', type: 'EQUITY' },
-            { id: '2020', name: 'Hand Loans Borrowed', type: 'LIABILITY' },
-            // REVENUES (Normal Balance: CREDIT)
             { id: '3010', name: 'Professional Revenue / Salary', type: 'REVENUE' },
-            { id: '3020', name: 'Secondary Inflow / Interest', type: 'REVENUE' },
-            // EXPENSES (Normal Balance: DEBIT)
-            { id: '4010', name: 'Home Operational Expenses', type: 'EXPENSE' },
-            { id: '4020', name: 'Daily Consumption Needs', type: 'EXPENSE' },
-            { id: '4030', name: 'Spiritual Donations & Charity', type: 'EXPENSE' },
-            { id: '4040', name: 'Pocket Money Payouts', type: 'EXPENSE' }
+            { id: '4010', name: 'General Household Expenses', type: 'EXPENSE' }
         ];
 
         let db = null;
+        let chartOfAccountsArray = [];
         let globalJournalVouchers = [];
         let runtimeActiveTab = 'dashboard';
         let privacyModeState = false;
@@ -376,7 +400,7 @@
 
         // INITIALIZE DATABASE 
         function initIndexedDBEngine() {
-            const request = indexedDB.open("FinAccountingCoreDB", 1);
+            const request = indexedDB.open("DynamicTallyCoreDB", 1);
             request.onsuccess = (e) => {
                 db = e.target.result;
                 bootloaderSequencer();
@@ -384,48 +408,56 @@
             request.onupgradeneeded = (e) => {
                 const upgradingDb = e.target.result;
                 upgradingDb.createObjectStore("journals", { keyPath: "id" });
+                upgradingDb.createObjectStore("accounts", { keyPath: "id" });
             };
         }
 
         async function bootloaderSequencer() {
-            globalJournalVouchers = await fetchJournalsFromDB();
-            // Chronological Sorting (Newest First)
+            // Load Masters and Transactions from local database
+            chartOfAccountsArray = await fetchRecordsFromDB("accounts");
+            if (chartOfAccountsArray.length === 0) {
+                for (const seed of DEFAULT_SEED_ACCOUNTS) {
+                    await saveRecordToDB("accounts", seed);
+                }
+                chartOfAccountsArray = DEFAULT_SEED_ACCOUNTS;
+            }
+
+            globalJournalVouchers = await fetchRecordsFromDB("journals");
             globalJournalVouchers.sort((x, y) => new Date(y.date + 'T' + y.time) - new Date(x.date + 'T' + x.time));
             
-            buildVoucherAccountDropdowns();
             refreshFinancialStatementsEngine();
             setupKeyboardShortcutIntercepts();
         }
 
-        function fetchJournalsFromDB() {
+        function fetchRecordsFromDB(storeName) {
             return new Promise((resolve) => {
-                const tx = db.transaction("journals", "readonly");
-                const store = tx.objectStore("journals");
+                const tx = db.transaction(storeName, "readonly");
+                const store = tx.objectStore(storeName);
                 const req = store.getAll();
                 req.onsuccess = () => resolve(req.result || []);
             });
         }
 
-        function writeJournalToDB(jvRecord) {
+        function saveRecordToDB(storeName, record) {
             return new Promise((resolve) => {
-                const tx = db.transaction("journals", "readwrite");
-                const store = tx.objectStore("journals");
-                store.put(jvRecord);
+                const tx = db.transaction(storeName, "readwrite");
+                const store = tx.objectStore(storeName);
+                store.put(record);
                 tx.oncomplete = () => resolve(true);
             });
         }
 
-        function deleteJournalFromDB(id) {
+        function deleteRecordFromDB(storeName, id) {
             return new Promise((resolve) => {
-                const tx = db.transaction("journals", "readwrite");
-                const store = tx.objectStore("journals");
+                const tx = db.transaction(storeName, "readwrite");
+                const store = tx.objectStore(storeName);
                 store.delete(id);
                 tx.oncomplete = () => resolve(true);
             });
         }
 
-        // POPULATE ACCOUNT DROPDOWNS
-        function buildVoucherAccountDropdowns() {
+        // RE-POPULATE DYNAMIC DROPDOWNS & COA MASTER LIST
+        function rebuildUiVoucherDropdownsAndLists() {
             const drSelect = document.getElementById('jv-dr-account');
             const crSelect = document.getElementById('jv-cr-account');
             const pickerSelect = document.getElementById('ledger-account-picker');
@@ -433,7 +465,10 @@
             let optionsDom = `<option value="">Select Account Node</option>`;
             let pickerDom = '';
 
-            CHART_OF_ACCOUNTS.forEach(acc => {
+            // Alphabetical presentation for ease of selection
+            const sortedCoa = [...chartOfAccountsArray].sort((a,b) => a.name.localeCompare(b.name));
+
+            sortedCoa.forEach(acc => {
                 optionsDom += `<option value="${acc.id}">[${acc.id}] ${acc.name} (${acc.type})</option>`;
                 pickerDom += `<option value="${acc.id}">[${acc.id}] ${acc.name}</option>`;
             });
@@ -441,43 +476,115 @@
             drSelect.innerHTML = optionsDom;
             crSelect.innerHTML = optionsDom;
             pickerSelect.innerHTML = pickerDom;
+
+            // Render Master Creation Panel View Lists
+            const coaTreeContainer = document.getElementById('master-coa-tree-list');
+            coaTreeContainer.innerHTML = '';
+            
+            const ledgerBalances = calculateLedgerBalances();
+
+            sortedCoa.forEach(acc => {
+                const bal = ledgerBalances[acc.id] || 0;
+                coaTreeContainer.innerHTML += `
+                    <div class="flex items-center justify-between border border-slate-100 bg-slate-50/50 p-3 rounded-xl text-xs">
+                        <div>
+                            <div class="font-bold text-slate-800">${acc.name}</div>
+                            <div class="text-[10px] text-slate-400 font-medium uppercase mt-0.5">Code: ${acc.id} • Group: ${acc.type}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-slate-900 privacy-target">₹${bal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                            <button onclick="purgeLedgerMasterAccount('${acc.id}')" class="text-[10px] text-rose-400 hover:text-rose-600 mt-1 block ml-auto">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
         }
 
-        // MATCH DEBIT AND CREDIT VALUES IN THE ENTRY FORM
+        // CREATE NEW CUSTOM LEDGER CODE
+        async function createNewLedgerMaster(event) {
+            event.preventDefault();
+            const name = document.getElementById('m-ledger-name').value.trim();
+            const type = document.getElementById('m-ledger-type').value;
+
+            if(!name) return;
+
+            // Simple auto-increment ID architecture based on standard account grouping numbers
+            let groupPrefix = "4"; // Expense default
+            if(type === "ASSET") groupPrefix = "1";
+            if(type === "LIABILITY") groupPrefix = "2";
+            if(type === "EQUITY") groupPrefix = "25";
+            if(type === "REVENUE") groupPrefix = "3";
+
+            const existingGroupRange = chartOfAccountsArray.filter(a => a.id.startsWith(groupPrefix));
+            let newId = groupPrefix + "010";
+            if(existingGroupRange.length > 0) {
+                const maxId = Math.max(...existingGroupRange.map(a => parseInt(a.id)));
+                newId = String(maxId + 10);
+            }
+
+            const newLedgerPayload = { id: newId, name: name, type: type };
+            
+            await saveRecordToDB("accounts", newLedgerPayload);
+            chartOfAccountsArray.push(newLedgerPayload);
+
+            document.getElementById('ledgerMasterForm').reset();
+            refreshFinancialStatementsEngine();
+            alert(`Success: Ledger "${name}" successfully registered under code ${newId}.`);
+        }
+
+        async function purgeLedgerMasterAccount(id) {
+            // Validate if ledger is currently holding dependencies
+            const hasUsage = globalJournalVouchers.some(j => j.drAccountId === id || j.crAccountId === id);
+            if(hasUsage) {
+                alert("Accounting Restriction: This ledger account cannot be deleted because active journal vouchers are posted against it. Purge the transactions first.");
+                return;
+            }
+            if(chartOfAccountsArray.length <= 2) {
+                alert("Cannot delete base account mappings.");
+                return;
+            }
+
+            if(confirm("Confirm deletion of this ledger account from masters?")) {
+                await deleteRecordFromDB("accounts", id);
+                chartOfAccountsArray = chartOfAccountsArray.filter(a => a.id !== id);
+                refreshFinancialStatementsEngine();
+            }
+        }
+
         function matchCreditAmountField() {
             document.getElementById('jv-cr-amount').value = document.getElementById('jv-dr-amount').value;
         }
 
-        // RECALCULATE CLOSING BALANCES FOR ALL LEDGERS
+        // COMPUTE ACCOUNT BALANCES
         function calculateLedgerBalances() {
             const balances = {};
-            CHART_OF_ACCOUNTS.forEach(a => balances[a.id] = 0);
+            chartOfAccountsArray.forEach(a => balances[a.id] = 0);
 
             globalJournalVouchers.forEach(jv => {
-                const drAcc = CHART_OF_ACCOUNTS.find(a => a.id === jv.drAccountId);
-                const crAcc = CHART_OF_ACCOUNTS.find(a => a.id === jv.crAccountId);
+                const drAcc = chartOfAccountsArray.find(a => a.id === jv.drAccountId);
+                const crAcc = chartOfAccountsArray.find(a => a.id === jv.crAccountId);
                 const amt = parseFloat(jv.amount);
 
                 if (drAcc) {
-                    if (drAcc.type === 'ASSET' || drAcc.type === 'EXPENSE') balances[jv.drAccountId] += amt;
-                    else balances[jv.drAccountId] -= amt; // Liability/Equity/Revenue decreases with Debit
+                    if (drAcc.type === 'ASSET' || drAcc.type === 'EXPENSE') balances[jv.drAccountId] = (balances[jv.drAccountId] || 0) + amt;
+                    else balances[jv.drAccountId] = (balances[jv.drAccountId] || 0) - amt;
                 }
                 if (crAcc) {
-                    if (crAcc.type === 'LIABILITY' || crAcc.type === 'EQUITY' || crAcc.type === 'REVENUE') balances[jv.crAccountId] += amt;
-                    else balances[jv.crAccountId] -= amt; // Asset/Expense decreases with Credit
+                    if (crAcc.type === 'LIABILITY' || crAcc.type === 'EQUITY' || crAcc.type === 'REVENUE') balances[jv.crAccountId] = (balances[jv.crAccountId] || 0) + amt;
+                    else balances[jv.crAccountId] = (balances[jv.crAccountId] || 0) - amt;
                 }
             });
             return balances;
         }
 
-        // GENERATE FINANCIAL STATEMENTS & METRICS
+        // COMPILE FINANCIAL METRICS
         function refreshFinancialStatementsEngine() {
             const ledgerBalances = calculateLedgerBalances();
+            rebuildUiVoucherDropdownsAndLists();
 
-            // Calculate Dashboard Totals
             let assetsSum = 0, liabilitiesSum = 0, revenuesSum = 0, expensesSum = 0, equitySum = 0;
-            CHART_OF_ACCOUNTS.forEach(acc => {
-                const bal = ledgerBalances[acc.id];
+            chartOfAccountsArray.forEach(acc => {
+                const bal = ledgerBalances[acc.id] || 0;
                 if (acc.type === 'ASSET') assetsSum += bal;
                 if (acc.type === 'LIABILITY') liabilitiesSum += bal;
                 if (acc.type === 'EQUITY') equitySum += bal;
@@ -493,39 +600,37 @@
             document.getElementById('metric-net-profit').innerText = `₹${netProfitSurplus.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
             
             const profitLabel = document.getElementById('metric-net-profit').parentElement;
-            if (netProfitSurplus < 0) {
-                profitLabel.firstElementChild.innerText = "Net Deficit / Loss";
-                document.getElementById('metric-net-profit').className = "text-2xl font-bold text-rose-600 privacy-target";
-            } else {
-                profitLabel.firstElementChild.innerText = "Net Profit / Surplus";
-                document.getElementById('metric-net-profit').className = "text-2xl font-bold text-indigo-600 privacy-target";
-            }
+            profitLabel.firstElementChild.innerText = netProfitSurplus < 0 ? "Net Deficit / Loss" : "Net Profit / Surplus";
+            document.getElementById('metric-net-profit').className = netProfitSurplus < 0 ? "text-2xl font-bold text-rose-600 privacy-target" : "text-2xl font-bold text-indigo-600 privacy-target";
 
-            // Build Cash Dashboard Cards
+            // Dashboard Active Asset Cards
             const cashContainer = document.getElementById('dash-cash-balances');
             cashContainer.innerHTML = '';
-            CHART_OF_ACCOUNTS.filter(a => a.id.startsWith('10')).forEach(acc => {
+            const activeAssets = chartOfAccountsArray.filter(a => a.type === 'ASSET');
+            if(activeAssets.length === 0) cashContainer.innerHTML = `<div class="text-xs text-slate-400 italic">No asset lines opened.</div>`;
+            activeAssets.forEach(acc => {
                 cashContainer.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-xs">
                         <span class="font-medium text-slate-700">${acc.name}</span>
-                        <span class="font-bold text-slate-900 privacy-target">₹${ledgerBalances[acc.id].toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span class="font-bold text-slate-900 privacy-target">₹${(ledgerBalances[acc.id] || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                 `;
             });
 
-            // Build Expense Dashboard Breakdown Cards
+            // Dashboard Operating Expenses
             const expContainer = document.getElementById('dash-expense-breakdown');
             expContainer.innerHTML = '';
-            CHART_OF_ACCOUNTS.filter(a => a.type === 'EXPENSE').forEach(acc => {
+            const activeExpenses = chartOfAccountsArray.filter(a => a.type === 'EXPENSE');
+            if(activeExpenses.length === 0) expContainer.innerHTML = `<div class="text-xs text-slate-400 italic">No expense accounts tracked.</div>`;
+            activeExpenses.forEach(acc => {
                 expContainer.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-xs">
                         <span class="font-medium text-slate-700">${acc.name}</span>
-                        <span class="font-bold text-rose-600 privacy-target">₹${ledgerBalances[acc.id].toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        <span class="font-bold text-rose-600 privacy-target">₹${(ledgerBalances[acc.id] || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                 `;
             });
 
-            // Update Core Views
             renderDashboardJournalTable();
             renderProfitAndLossStatement(ledgerBalances, revenuesSum, expensesSum, netProfitSurplus);
             renderBalanceSheetStatement(ledgerBalances, assetsSum, liabilitiesSum, equitySum, netProfitSurplus);
@@ -534,7 +639,6 @@
             lucide.createIcons();
         }
 
-        // RENDER RECENT ENTRIES TO DASHBOARD TABLE
         function renderDashboardJournalTable() {
             const tbody = document.getElementById('dashboard-journal-tbody');
             tbody.innerHTML = '';
@@ -546,8 +650,8 @@
             }
 
             previewSet.forEach(jv => {
-                const drAccName = CHART_OF_ACCOUNTS.find(a => a.id === jv.drAccountId)?.name;
-                const crAccName = CHART_OF_ACCOUNTS.find(a => a.id === jv.crAccountId)?.name;
+                const drAccName = chartOfAccountsArray.find(a => a.id === jv.drAccountId)?.name || 'Unknown A/c';
+                const crAccName = chartOfAccountsArray.find(a => a.id === jv.crAccountId)?.name || 'Unknown A/c';
 
                 tbody.innerHTML += `
                     <tr class="border-b border-slate-50 text-xs hover:bg-slate-50 transition">
@@ -567,7 +671,6 @@
             });
         }
 
-        // TAB ROUTING CONTROLLER
         function switchTab(targetViewId) {
             runtimeActiveTab = targetViewId;
             document.querySelectorAll('.view-panel').forEach(view => view.classList.add('hidden'));
@@ -582,10 +685,9 @@
 
             if (targetViewId === 'journal') renderMasterJournalBook();
             if (targetViewId === 'ledgers') renderIndividualLedgerTrace();
-            if (targetViewId === 'pl' || targetViewId === 'bs') refreshFinancialStatementsEngine();
+            if (targetViewId === 'chartofaccounts' || targetViewId === 'pl' || targetViewId === 'bs') refreshFinancialStatementsEngine();
         }
 
-        // RENDER ENTRY IN JOURNAL BOOK
         function renderMasterJournalBook() {
             const tbody = document.getElementById('master-journal-tbody');
             tbody.innerHTML = '';
@@ -594,8 +696,8 @@
 
             const filteredSet = globalJournalVouchers.filter(jv => {
                 if(!searchToken) return true;
-                const drName = CHART_OF_ACCOUNTS.find(a => a.id === jv.drAccountId)?.name.toLowerCase();
-                const crName = CHART_OF_ACCOUNTS.find(a => a.id === jv.crAccountId)?.name.toLowerCase();
+                const drName = (chartOfAccountsArray.find(a => a.id === jv.drAccountId)?.name || '').toLowerCase();
+                const crName = (chartOfAccountsArray.find(a => a.id === jv.crAccountId)?.name || '').toLowerCase();
                 return jv.description.toLowerCase().includes(searchToken) || drName.includes(searchToken) || crName.includes(searchToken);
             });
 
@@ -605,8 +707,8 @@
             }
 
             filteredSet.forEach(jv => {
-                const drAccName = CHART_OF_ACCOUNTS.find(a => a.id === jv.drAccountId)?.name;
-                const crAccName = CHART_OF_ACCOUNTS.find(a => a.id === jv.crAccountId)?.name;
+                const drAccName = chartOfAccountsArray.find(a => a.id === jv.drAccountId)?.name || 'Unknown';
+                const crAccName = chartOfAccountsArray.find(a => a.id === jv.crAccountId)?.name || 'Unknown';
 
                 tbody.innerHTML += `
                     <tr class="border-b border-slate-100 text-xs hover:bg-slate-50/50 transition">
@@ -631,23 +733,21 @@
             lucide.createIcons();
         }
 
-        // GENERAL LEDGER AUDIT T-TRACE SUBSYSTEM
         function renderIndividualLedgerTrace() {
             const pickerId = document.getElementById('ledger-account-picker').value;
-            const accountRef = CHART_OF_ACCOUNTS.find(a => a.id === pickerId);
+            const accountRef = chartOfAccountsArray.find(a => a.id === pickerId);
             if (!accountRef) return;
 
             document.getElementById('ledger-title-display').innerText = `Ledger Account: [${accountRef.id}] ${accountRef.name} (${accountRef.type})`;
             
             const balances = calculateLedgerBalances();
-            document.getElementById('ledger-closing-bal-display').innerText = `₹${balances[accountRef.id].toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            const balVal = balances[accountRef.id] || 0;
+            document.getElementById('ledger-closing-bal-display').innerText = `₹${balVal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
             const tbody = document.getElementById('ledger-trace-tbody');
             tbody.innerHTML = '';
 
-            // Filter out related journal entry items
             const activeTraceArray = globalJournalVouchers.filter(jv => jv.drAccountId === pickerId || jv.crAccountId === pickerId);
-            // Reverse array layout to display oldest transaction line sequences first
             const chronologicalLineItems = [...activeTraceArray].reverse();
 
             if(chronologicalLineItems.length === 0) {
@@ -657,7 +757,7 @@
 
             chronologicalLineItems.forEach(jv => {
                 const isDebitLeg = (jv.drAccountId === pickerId);
-                const contraAccountName = CHART_OF_ACCOUNTS.find(a => a.id === (isDebitLeg ? jv.crAccountId : jv.drAccountId))?.name;
+                const contraAccountName = chartOfAccountsArray.find(a => a.id === (isDebitLeg ? jv.crAccountId : jv.drAccountId))?.name || 'Unknown Link';
 
                 tbody.innerHTML += `
                     <tr class="border-b border-slate-50 text-xs hover:bg-slate-50 transition">
@@ -671,7 +771,6 @@
             applyPrivacyBlurs();
         }
 
-        // RENDER PROFIT & LOSS STATEMENTS
         function renderProfitAndLossStatement(balances, revSum, expSum, netProfit) {
             const revContainer = document.getElementById('pl-revenue-container');
             const expContainer = document.getElementById('pl-expense-container');
@@ -679,20 +778,20 @@
             revContainer.innerHTML = '';
             expContainer.innerHTML = '';
 
-            CHART_OF_ACCOUNTS.filter(a => a.type === 'REVENUE').forEach(acc => {
+            chartOfAccountsArray.filter(a => a.type === 'REVENUE').forEach(acc => {
                 revContainer.innerHTML += `
                     <div class="flex justify-between px-1">
                         <span class="text-slate-600">${acc.name}</span>
-                        <span class="privacy-target font-medium">₹${balances[acc.id].toLocaleString('en-IN')}</span>
+                        <span class="privacy-target font-medium">₹${(balances[acc.id] || 0).toLocaleString('en-IN')}</span>
                     </div>
                 `;
             });
 
-            CHART_OF_ACCOUNTS.filter(a => a.type === 'EXPENSE').forEach(acc => {
+            chartOfAccountsArray.filter(a => a.type === 'EXPENSE').forEach(acc => {
                 expContainer.innerHTML += `
                     <div class="flex justify-between px-1">
                         <span class="text-slate-600">${acc.name}</span>
-                        <span class="privacy-target font-medium text-rose-600">₹${balances[acc.id].toLocaleString('en-IN')}</span>
+                        <span class="privacy-target font-medium text-rose-600">₹${(balances[acc.id] || 0).toLocaleString('en-IN')}</span>
                     </div>
                 `;
             });
@@ -700,17 +799,10 @@
             document.getElementById('pl-total-revenue-val').innerText = `₹${revSum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
             document.getElementById('pl-total-expense-val').innerText = `₹${expSum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
             document.getElementById('pl-net-profit-val').innerText = `₹${Math.abs(netProfit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-
-            if (netProfit < 0) {
-                document.getElementById('pl-net-label').innerText = "Net Deficit / Loss for the Period (B - A)";
-                document.getElementById('pl-net-profit-val').className = "privacy-target text-rose-600";
-            } else {
-                document.getElementById('pl-net-label').innerText = "Net Profit / Surplus for the Period (A - B)";
-                document.getElementById('pl-net-profit-val').className = "privacy-target text-indigo-600";
-            }
+            document.getElementById('pl-net-label').innerText = netProfit < 0 ? "Net Deficit / Loss for the Period (B - A)" : "Net Profit / Surplus for the Period (A - B)";
+            document.getElementById('pl-net-profit-val').className = netProfit < 0 ? "privacy-target text-rose-600" : "privacy-target text-indigo-600";
         }
 
-        // RENDER REAL-TIME ACCRUAL BALANCE SHEET
         function renderBalanceSheetStatement(balances, assetSum, liabilitySum, equitySum, netProfit) {
             const assetContainer = document.getElementById('bs-assets-container');
             const liabilityContainer = document.getElementById('bs-liabilities-container');
@@ -718,25 +810,24 @@
             assetContainer.innerHTML = '';
             liabilityContainer.innerHTML = '';
 
-            CHART_OF_ACCOUNTS.filter(a => a.type === 'ASSET').forEach(acc => {
+            chartOfAccountsArray.filter(a => a.type === 'ASSET').forEach(acc => {
                 assetContainer.innerHTML += `
                     <div class="flex justify-between px-1">
                         <span class="text-slate-600">${acc.name}</span>
-                        <span class="privacy-target font-medium">₹${balances[acc.id].toLocaleString('en-IN')}</span>
+                        <span class="privacy-target font-medium">₹${(balances[acc.id] || 0).toLocaleString('en-IN')}</span>
                     </div>
                 `;
             });
 
-            CHART_OF_ACCOUNTS.filter(a => a.type === 'LIABILITY' || a.type === 'EQUITY').forEach(acc => {
+            chartOfAccountsArray.filter(a => a.type === 'LIABILITY' || a.type === 'EQUITY').forEach(acc => {
                 liabilityContainer.innerHTML += `
                     <div class="flex justify-between px-1">
                         <span class="text-slate-600">${acc.name}</span>
-                        <span class="privacy-target font-medium">₹${balances[acc.id].toLocaleString('en-IN')}</span>
+                        <span class="privacy-target font-medium">₹${(balances[acc.id] || 0).toLocaleString('en-IN')}</span>
                     </div>
                 `;
             });
 
-            // Double Entry Checks: Total Liabilities = Liabilities + Base Equity + Retained Net profit
             const combinedLiabilitiesAndEquitySum = liabilitySum + equitySum + netProfit;
 
             document.getElementById('bs-retained-earnings-val').innerText = `₹${netProfit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
@@ -744,9 +835,8 @@
             document.getElementById('bs-total-liabilities-val').innerText = `₹${combinedLiabilitiesAndEquitySum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
 
             const messageBar = document.getElementById('bs-equilibrium-flag');
-            // Allow minor floating point variances
             if (Math.abs(assetSum - combinedLiabilitiesAndEquitySum) < 0.05) {
-                messageBar.innerText = "✓ Double-Entry Balance Ledger is perfectly matched and in equilibrium.";
+                messageBar.innerText = "✓ Double-Entry Ledger is perfectly matched and in equilibrium.";
                 messageBar.className = "text-center text-xs font-semibold py-2 rounded-xl bg-emerald-50 text-emerald-700";
             } else {
                 messageBar.innerText = "⚠️ Balance Sheet Mismatch. Check your manual journal posting lines.";
@@ -754,7 +844,6 @@
             }
         }
 
-        // MODAL MANAGEMENT OPEN/CLOSE ACTIONS
         function openJournalModal() {
             const today = new Date();
             document.getElementById('jv-date').value = today.toISOString().split('T')[0];
@@ -768,7 +857,6 @@
             document.getElementById('journalForm').reset();
         }
 
-        // SAVE AND COMMIT VOUCHERS
         async function saveJournalVoucher(event) {
             event.preventDefault();
 
@@ -799,7 +887,7 @@
                 } : null
             };
 
-            await writeJournalToDB(jvPayload);
+            await saveRecordToDB("journals", jvPayload);
             globalJournalVouchers.unshift(jvPayload);
 
             closeJournalModal();
@@ -808,11 +896,10 @@
             if (runtimeActiveTab === 'ledgers') renderIndividualLedgerTrace();
         }
 
-        // PURGE JOURNAL ENTRIES
         async function purgeJournalVoucher(id) {
-            if (!confirm("Delete this journal voucher? It will remove entries from both debited and credited accounts.")) return;
+            if (!confirm("Delete this journal voucher? It will alter your financial statements balances.")) return;
             
-            await deleteJournalFromDB(id);
+            await deleteRecordFromDB("journals", id);
             globalJournalVouchers = globalJournalVouchers.filter(j => j.id !== id);
 
             refreshFinancialStatementsEngine();
@@ -820,14 +907,11 @@
             if (runtimeActiveTab === 'ledgers') renderIndividualLedgerTrace();
         }
 
-        // FILE HANDLINGPERSISTENCY STRIPS
         function handleFileProcessing(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             globalAttachedFileName = file.name;
             globalAttachedFileType = file.type;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 globalAttachedFileBlobBase64 = e.target.result;
@@ -848,7 +932,6 @@
         function viewAttachmentDocument(id) {
             const jv = globalJournalVouchers.find(j => j.id === id);
             if (!jv || !jv.attachment) return;
-
             const att = jv.attachment;
             const lightbox = document.getElementById('lightboxModal');
             const imgEl = document.getElementById('lightboxImage');
@@ -873,7 +956,6 @@
             document.getElementById('lightboxModal').classList.add('hidden');
         }
 
-        // PRIVACY SYSTEM
         function togglePrivacyMode() {
             privacyModeState = !privacyModeState;
             const icon = document.getElementById('privacyIcon');
@@ -889,7 +971,6 @@
             });
         }
 
-        // GLOBAL SEARCH & UTILITIES
         function runGlobalSearch() {
             if (runtimeActiveTab !== 'journal') switchTab('journal');
             else renderMasterJournalBook();
@@ -904,12 +985,12 @@
             });
         }
 
-        // SYSTEM BACKUP AND RESTORE ENGINE (JSON BASED VOUCHER WORKSPACE)
         function exportBackup() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(globalJournalVouchers));
+            const backupObj = { accounts: chartOfAccountsArray, journals: globalJournalVouchers };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj));
             const dlAnchor = document.createElement('a');
             dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `Accounting_Ledger_Backup_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchor.setAttribute("download", `Accounting_Ledger_Master_Backup_${new Date().toISOString().slice(0,10)}.json`);
             document.body.appendChild(dlAnchor);
             dlAnchor.click();
             dlAnchor.remove();
@@ -922,13 +1003,12 @@
             reader.onload = async function(e) {
                 try {
                     const parsedData = JSON.parse(e.target.result);
-                    if (Array.isArray(parsedData)) {
+                    if (parsedData.accounts && parsedData.journals) {
                         if (confirm("Restore from backup? This will overwrite your current device logs.")) {
-                            const tx = db.transaction("journals", "readwrite");
-                            tx.objectStore("journals").clear();
-                            for (const jv of parsedData) {
-                                await writeJournalToDB(jv);
-                            }
+                            const txA = db.transaction("accounts", "readwrite").objectStore("accounts").clear();
+                            const txJ = db.transaction("journals", "readwrite").objectStore("journals").clear();
+                            for (const acc of parsedData.accounts) await saveRecordToDB("accounts", acc);
+                            for (const jv of parsedData.journals) await saveRecordToDB("journals", jv);
                             alert("Accounting workspace restored successfully!");
                             window.location.reload();
                         }
@@ -938,11 +1018,8 @@
             reader.readAsText(file);
         }
 
-        // DEVICE LOCK
         let storedSecurityPinCode = localStorage.getItem("appSecurityVaultPin") || null;
-        if (storedSecurityPinCode) {
-            document.getElementById('pinModal').classList.remove('hidden');
-        }
+        if (storedSecurityPinCode) document.getElementById('pinModal').classList.remove('hidden');
 
         function verifyPin() {
             if (document.getElementById('pinInput').value === storedSecurityPinCode) {
@@ -953,9 +1030,7 @@
             }
         }
 
-        window.onload = () => {
-            initIndexedDBEngine();
-        };
+        window.onload = () => { initIndexedDBEngine(); };
     </script>
 </body>
 </html>
