@@ -22,15 +22,6 @@
 </head>
 <body class="text-slate-800 antialiased">
 
-    <div id="pinModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center border border-slate-100">
-            <h3 class="text-xl font-bold mb-2 text-slate-900">Secure Access Lock</h3>
-            <p class="text-sm text-slate-500 mb-6" id="pinModalDesc">Enter your 4-digit PIN to access your vault</p>
-            <input type="password" id="pinInput" maxlength="4" class="tracking-widest text-center text-2xl font-bold w-32 border-b-2 border-slate-300 focus:border-indigo-600 outline-none pb-2 mb-6" placeholder="••••">
-            <button onclick="verifyPin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition">Unlock Tracker</button>
-        </div>
-    </div>
-
     <aside class="desktop-sidebar fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col z-30">
         <div class="p-6 border-b border-slate-100 flex items-center justify-between">
             <div class="flex items-center gap-2.5">
@@ -46,7 +37,7 @@
                 <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
             </button>
             <button onclick="switchTab('chartofaccounts')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50" id="tab-chartofaccounts">
-                <i data-lucide="plus-circle" class="w-4 h-4"></i> Create Ledger (Masters)
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Create/Alter Ledger
             </button>
             <button onclick="switchTab('journal')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50" id="tab-journal">
                 <i data-lucide="book-text" class="w-4 h-4"></i> Journal Entries
@@ -115,11 +106,11 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-                        <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2"><i data-lucide="landmark" class="w-4 h-4 text-indigo-500"></i> Active Current Liquid Asset Balances</h3>
+                        <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2"><i data-lucide="landmark" class="w-4 h-4 text-indigo-500"></i> Active Asset Balances</h3>
                         <div class="space-y-3" id="dash-cash-balances"></div>
                     </div>
                     <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-                        <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2"><i data-lucide="pie-chart" class="w-4 h-4 text-rose-500"></i> Top Operating Expenses Overview</h3>
+                        <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2"><i data-lucide="pie-chart" class="w-4 h-4 text-rose-500"></i> Operating Expenses Overview</h3>
                         <div class="space-y-3" id="dash-expense-breakdown"></div>
                     </div>
                 </div>
@@ -149,9 +140,12 @@
 
             <section id="view-chartofaccounts" class="view-panel space-y-6 hidden">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-4 h-fit">
-                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2"><i data-lucide="plus-circle" class="text-indigo-600"></i> Accounts Info > Ledger > Create</h3>
-                        <form id="ledgerMasterForm" onsubmit="createNewLedgerMaster(event)" class="space-y-4">
+                    <div class="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-4 h-fit sticky top-20">
+                        <h3 class="text-base font-bold text-slate-900 flex items-center gap-2" id="ledger-form-title">
+                            <i data-lucide="plus-circle" class="text-indigo-600" id="ledger-form-icon"></i> Create Ledger Master
+                        </h3>
+                        <form id="ledgerMasterForm" onsubmit="saveLedgerMaster(event)" class="space-y-4">
+                            <input type="hidden" id="m-ledger-id">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-500 mb-1">Ledger Account Name</label>
                                 <input type="text" id="m-ledger-name" required placeholder="e.g., Mahesh A/c or Smoking Expense" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
@@ -166,7 +160,14 @@
                                     <option value="EXPENSE">Expense (Smoking, Food, Rent)</option>
                                 </select>
                             </div>
-                            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-xl text-xs transition">Create Master Ledger</button>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 mb-1">Opening Balance (₹)</label>
+                                <input type="number" step="0.01" id="m-ledger-opening" value="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="submit" id="ledger-submit-btn" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-xl text-xs transition">Create Ledger</button>
+                                <button type="button" id="ledger-cancel-btn" onclick="resetLedgerFormState()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-3 py-2 rounded-xl text-xs transition">Cancel</button>
+                            </div>
                         </form>
                     </div>
 
@@ -193,11 +194,11 @@
                                 <tr class="bg-slate-50 text-slate-400 font-medium text-xs border-b border-slate-100">
                                     <th class="p-4 w-40">Timestamp Sequence</th>
                                     <th class="p-4">Particular Account Lines</th>
-                                    <th class="p-4 text-right w-32">Debit (₹)</th>
-                                    <th class="p-4 text-right w-32">Credit (₹)</th>
+                                    <th class="p-4 text-right w-24">Debit (₹)</th>
+                                    <th class="p-4 text-right w-24">Credit (₹)</th>
                                     <th class="p-4 max-w-xs">Narration / References</th>
-                                    <th class="p-4 text-center w-20">Docs</th>
-                                    <th class="p-4 text-center w-20">Action</th>
+                                    <th class="p-4 text-center w-16">Docs</th>
+                                    <th class="p-4 text-center w-32">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="master-journal-tbody"></tbody>
@@ -308,10 +309,11 @@
     <div id="journalModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[95vh] overflow-y-auto custom-scrollbar border border-slate-100">
             <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-                <h3 class="text-base font-bold text-slate-900">Pass Balanced Journal Voucher</h3>
+                <h3 class="text-base font-bold text-slate-900" id="jv-modal-title">Pass Balanced Journal Voucher</h3>
                 <button onclick="closeJournalModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <form id="journalForm" onsubmit="saveJournalVoucher(event)" class="p-6 space-y-4">
+                <input type="hidden" id="jv-id">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Voucher Date</label>
@@ -356,13 +358,13 @@
                     <input type="text" id="jv-desc" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none" placeholder="Being payment made towards...">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">Persistent Receipt Attachment (IndexedDB Native)</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Receipt Attachment (IndexedDB Native)</label>
                     <div class="border-2 border-dashed border-slate-200 hover:border-indigo-500 rounded-xl p-3 text-center transition cursor-pointer relative">
                         <input type="file" id="jv-file" onchange="handleFileProcessing(event)" class="absolute inset-0 opacity-0 cursor-pointer">
                         <div class="text-xs text-slate-400" id="file-upload-label"><i data-lucide="paperclip" class="w-4 h-4 mx-auto mb-1"></i> Upload Receipt Document</div>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition">Post Balanced Journal Entry</button>
+                <button type="submit" id="jv-submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition">Post Balanced Journal Entry</button>
             </form>
         </div>
     </div>
@@ -379,13 +381,12 @@
     </div>
 
     <script>
-        // CORE INITIAL BASE CHART OF ACCOUNTS (Fallback seeds if database is totally empty)
         const DEFAULT_SEED_ACCOUNTS = [
-            { id: '1010', name: 'Primary Bank Account', type: 'ASSET' },
-            { id: '1020', name: 'Physical Cash Vault', type: 'ASSET' },
-            { id: '2010', name: 'Capital Account Equity', type: 'EQUITY' },
-            { id: '3010', name: 'Professional Revenue / Salary', type: 'REVENUE' },
-            { id: '4010', name: 'General Household Expenses', type: 'EXPENSE' }
+            { id: '1010', name: 'Primary Bank Account', type: 'ASSET', openingBalance: 0 },
+            { id: '1020', name: 'Physical Cash Vault', type: 'ASSET', openingBalance: 0 },
+            { id: '2010', name: 'Capital Account Equity', type: 'EQUITY', openingBalance: 0 },
+            { id: '3010', name: 'Professional Revenue / Salary', type: 'REVENUE', openingBalance: 0 },
+            { id: '4010', name: 'General Household Expenses', type: 'EXPENSE', openingBalance: 0 }
         ];
 
         let db = null;
@@ -400,7 +401,7 @@
 
         // INITIALIZE DATABASE 
         function initIndexedDBEngine() {
-            const request = indexedDB.open("DynamicTallyCoreDB", 1);
+            const request = indexedDB.open("TallyAlterationCoreDB", 1);
             request.onsuccess = (e) => {
                 db = e.target.result;
                 bootloaderSequencer();
@@ -413,7 +414,6 @@
         }
 
         async function bootloaderSequencer() {
-            // Load Masters and Transactions from local database
             chartOfAccountsArray = await fetchRecordsFromDB("accounts");
             if (chartOfAccountsArray.length === 0) {
                 for (const seed of DEFAULT_SEED_ACCOUNTS) {
@@ -456,7 +456,7 @@
             });
         }
 
-        // RE-POPULATE DYNAMIC DROPDOWNS & COA MASTER LIST
+        // POPULATE DROPDOWNS & LISTS
         function rebuildUiVoucherDropdownsAndLists() {
             const drSelect = document.getElementById('jv-dr-account');
             const crSelect = document.getElementById('jv-cr-account');
@@ -465,7 +465,6 @@
             let optionsDom = `<option value="">Select Account Node</option>`;
             let pickerDom = '';
 
-            // Alphabetical presentation for ease of selection
             const sortedCoa = [...chartOfAccountsArray].sort((a,b) => a.name.localeCompare(b.name));
 
             sortedCoa.forEach(acc => {
@@ -477,7 +476,6 @@
             crSelect.innerHTML = optionsDom;
             pickerSelect.innerHTML = pickerDom;
 
-            // Render Master Creation Panel View Lists
             const coaTreeContainer = document.getElementById('master-coa-tree-list');
             coaTreeContainer.innerHTML = '';
             
@@ -485,66 +483,99 @@
 
             sortedCoa.forEach(acc => {
                 const bal = ledgerBalances[acc.id] || 0;
+                const opBal = parseFloat(acc.openingBalance || 0);
                 coaTreeContainer.innerHTML += `
                     <div class="flex items-center justify-between border border-slate-100 bg-slate-50/50 p-3 rounded-xl text-xs">
                         <div>
                             <div class="font-bold text-slate-800">${acc.name}</div>
                             <div class="text-[10px] text-slate-400 font-medium uppercase mt-0.5">Code: ${acc.id} • Group: ${acc.type}</div>
+                            ${opBal !== 0 ? `<div class="text-[10px] text-indigo-500 font-medium mt-0.5">Op. Bal: ₹${opBal.toLocaleString('en-IN')}</div>` : ''}
                         </div>
-                        <div class="text-right">
+                        <div class="text-right space-y-1">
                             <div class="font-bold text-slate-900 privacy-target">₹${bal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
-                            <button onclick="purgeLedgerMasterAccount('${acc.id}')" class="text-[10px] text-rose-400 hover:text-rose-600 mt-1 block ml-auto">Delete</button>
+                            <div class="flex gap-2 justify-end">
+                                <button onclick="populateLedgerAlterMode('${acc.id}')" class="text-[10px] text-indigo-600 hover:underline">Alter</button>
+                                <button onclick="purgeLedgerMasterAccount('${acc.id}')" class="text-[10px] text-rose-400 hover:underline">Delete</button>
+                            </div>
                         </div>
                     </div>
                 `;
             });
         }
 
-        // CREATE NEW CUSTOM LEDGER CODE
-        async function createNewLedgerMaster(event) {
+        // MASTER LEDGER: CREATE OR ALTER/EDIT RULE LOGIC
+        async function saveLedgerMaster(event) {
             event.preventDefault();
+            const id = document.getElementById('m-ledger-id').value;
             const name = document.getElementById('m-ledger-name').value.trim();
             const type = document.getElementById('m-ledger-type').value;
+            const openingBalance = parseFloat(document.getElementById('m-ledger-opening').value) || 0;
 
             if(!name) return;
 
-            // Simple auto-increment ID architecture based on standard account grouping numbers
-            let groupPrefix = "4"; // Expense default
-            if(type === "ASSET") groupPrefix = "1";
-            if(type === "LIABILITY") groupPrefix = "2";
-            if(type === "EQUITY") groupPrefix = "25";
-            if(type === "REVENUE") groupPrefix = "3";
+            let finalId = id;
+            if (!finalId) {
+                // Creating a new ledger
+                let groupPrefix = "4";
+                if(type === "ASSET") groupPrefix = "1";
+                if(type === "LIABILITY") groupPrefix = "2";
+                if(type === "EQUITY") groupPrefix = "25";
+                if(type === "REVENUE") groupPrefix = "3";
 
-            const existingGroupRange = chartOfAccountsArray.filter(a => a.id.startsWith(groupPrefix));
-            let newId = groupPrefix + "010";
-            if(existingGroupRange.length > 0) {
-                const maxId = Math.max(...existingGroupRange.map(a => parseInt(a.id)));
-                newId = String(maxId + 10);
+                const existingGroupRange = chartOfAccountsArray.filter(a => a.id.startsWith(groupPrefix));
+                finalId = groupPrefix + "010";
+                if(existingGroupRange.length > 0) {
+                    const maxId = Math.max(...existingGroupRange.map(a => parseInt(a.id)));
+                    finalId = String(maxId + 10);
+                }
             }
 
-            const newLedgerPayload = { id: newId, name: name, type: type };
+            const ledgerPayload = { id: finalId, name: name, type: type, openingBalance: openingBalance };
             
-            await saveRecordToDB("accounts", newLedgerPayload);
-            chartOfAccountsArray.push(newLedgerPayload);
+            await saveRecordToDB("accounts", ledgerPayload);
+            
+            const existingIndex = chartOfAccountsArray.findIndex(a => a.id === finalId);
+            if (existingIndex > -1) {
+                chartOfAccountsArray[existingIndex] = ledgerPayload; // Alter mode update
+            } else {
+                chartOfAccountsArray.push(ledgerPayload); // New creation layout
+            }
 
-            document.getElementById('ledgerMasterForm').reset();
+            resetLedgerFormState();
             refreshFinancialStatementsEngine();
-            alert(`Success: Ledger "${name}" successfully registered under code ${newId}.`);
+        }
+
+        function populateLedgerAlterMode(id) {
+            const acc = chartOfAccountsArray.find(a => a.id === id);
+            if(!acc) return;
+
+            document.getElementById('m-ledger-id').value = acc.id;
+            document.getElementById('m-ledger-name').value = acc.name;
+            document.getElementById('m-ledger-type').value = acc.type;
+            document.getElementById('m-ledger-opening').value = acc.openingBalance || 0;
+
+            document.getElementById('ledger-form-title').innerHTML = `<i data-lucide="edit" class="text-indigo-600"></i> Alter Ledger [${acc.id}]`;
+            document.getElementById('ledger-submit-btn').innerText = "Save Alterations";
+            document.getElementById('ledger-cancel-btn').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function resetLedgerFormState() {
+            document.getElementById('ledgerMasterForm').reset();
+            document.getElementById('m-ledger-id').value = '';
+            document.getElementById('ledger-form-title').innerHTML = `<i data-lucide="plus-circle" class="text-indigo-600"></i> Create Ledger Master`;
+            document.getElementById('ledger-submit-btn').innerText = "Create Ledger";
+            document.getElementById('ledger-cancel-btn').classList.add('hidden');
+            lucide.createIcons();
         }
 
         async function purgeLedgerMasterAccount(id) {
-            // Validate if ledger is currently holding dependencies
             const hasUsage = globalJournalVouchers.some(j => j.drAccountId === id || j.crAccountId === id);
             if(hasUsage) {
-                alert("Accounting Restriction: This ledger account cannot be deleted because active journal vouchers are posted against it. Purge the transactions first.");
+                alert("Accounting Balance Sheet Rule: This master cannot be deleted because vouchers have been assigned to it.");
                 return;
             }
-            if(chartOfAccountsArray.length <= 2) {
-                alert("Cannot delete base account mappings.");
-                return;
-            }
-
-            if(confirm("Confirm deletion of this ledger account from masters?")) {
+            if(confirm("Confirm ledger master deletion?")) {
                 await deleteRecordFromDB("accounts", id);
                 chartOfAccountsArray = chartOfAccountsArray.filter(a => a.id !== id);
                 refreshFinancialStatementsEngine();
@@ -555,11 +586,16 @@
             document.getElementById('jv-cr-amount').value = document.getElementById('jv-dr-amount').value;
         }
 
-        // COMPUTE ACCOUNT BALANCES
+        // TALLY COMPUTATION SYSTEM ENGINE FOR DR & CR INCLUSIONS
         function calculateLedgerBalances() {
             const balances = {};
-            chartOfAccountsArray.forEach(a => balances[a.id] = 0);
+            
+            // Step 1: Base initialization incorporating user defined Opening Balances
+            chartOfAccountsArray.forEach(acc => {
+                balances[acc.id] = parseFloat(acc.openingBalance || 0);
+            });
 
+            // Step 2: Calculate operational increments/decrements
             globalJournalVouchers.forEach(jv => {
                 const drAcc = chartOfAccountsArray.find(a => a.id === jv.drAccountId);
                 const crAcc = chartOfAccountsArray.find(a => a.id === jv.crAccountId);
@@ -577,12 +613,13 @@
             return balances;
         }
 
-        // COMPILE FINANCIAL METRICS
+        // GENERATE REAL-TIME STATEMENTS
         function refreshFinancialStatementsEngine() {
             const ledgerBalances = calculateLedgerBalances();
             rebuildUiVoucherDropdownsAndLists();
 
             let assetsSum = 0, liabilitiesSum = 0, revenuesSum = 0, expensesSum = 0, equitySum = 0;
+            
             chartOfAccountsArray.forEach(acc => {
                 const bal = ledgerBalances[acc.id] || 0;
                 if (acc.type === 'ASSET') assetsSum += bal;
@@ -601,14 +638,11 @@
             
             const profitLabel = document.getElementById('metric-net-profit').parentElement;
             profitLabel.firstElementChild.innerText = netProfitSurplus < 0 ? "Net Deficit / Loss" : "Net Profit / Surplus";
-            document.getElementById('metric-net-profit').className = netProfitSurplus < 0 ? "text-2xl font-bold text-rose-600 privacy-target" : "text-2xl font-bold text-indigo-600 privacy-target";
 
-            // Dashboard Active Asset Cards
+            // Dashboard Current Positions
             const cashContainer = document.getElementById('dash-cash-balances');
             cashContainer.innerHTML = '';
-            const activeAssets = chartOfAccountsArray.filter(a => a.type === 'ASSET');
-            if(activeAssets.length === 0) cashContainer.innerHTML = `<div class="text-xs text-slate-400 italic">No asset lines opened.</div>`;
-            activeAssets.forEach(acc => {
+            chartOfAccountsArray.filter(a => a.type === 'ASSET').forEach(acc => {
                 cashContainer.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-xs">
                         <span class="font-medium text-slate-700">${acc.name}</span>
@@ -617,12 +651,9 @@
                 `;
             });
 
-            // Dashboard Operating Expenses
             const expContainer = document.getElementById('dash-expense-breakdown');
             expContainer.innerHTML = '';
-            const activeExpenses = chartOfAccountsArray.filter(a => a.type === 'EXPENSE');
-            if(activeExpenses.length === 0) expContainer.innerHTML = `<div class="text-xs text-slate-400 italic">No expense accounts tracked.</div>`;
-            activeExpenses.forEach(acc => {
+            chartOfAccountsArray.filter(a => a.type === 'EXPENSE').forEach(acc => {
                 expContainer.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-xs">
                         <span class="font-medium text-slate-700">${acc.name}</span>
@@ -723,8 +754,9 @@
                         <td class="p-4 text-center">
                             ${jv.attachment ? `<button onclick="viewAttachmentDocument('${jv.id}')" class="bg-indigo-50 text-indigo-600 p-1.5 rounded-lg inline-block"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-300">-</span>`}
                         </td>
-                        <td class="p-4 text-center">
-                            <button onclick="purgeJournalVoucher('${jv.id}')" class="text-rose-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5 mx-auto"></i></button>
+                        <td class="p-4 text-center space-x-2 whitespace-nowrap">
+                            <button onclick="populateVoucherAlterMode('${jv.id}')" class="text-indigo-600 hover:text-indigo-900 font-medium bg-slate-100 px-2 py-1 rounded-md">Edit</button>
+                            <button onclick="purgeJournalVoucher('${jv.id}')" class="text-rose-400 hover:text-rose-600 font-medium bg-slate-100 px-2 py-1 rounded-md">Delete</button>
                         </td>
                     </tr>
                 `;
@@ -747,11 +779,25 @@
             const tbody = document.getElementById('ledger-trace-tbody');
             tbody.innerHTML = '';
 
+            // Render Beginning line row if non-zero setup
+            if (parseFloat(accountRef.openingBalance || 0) !== 0) {
+                const op = parseFloat(accountRef.openingBalance);
+                const isDebitGroup = (accountRef.type === 'ASSET' || accountRef.type === 'EXPENSE');
+                tbody.innerHTML += `
+                    <tr class="bg-indigo-50/20 border-b border-slate-100 text-xs italic">
+                        <td class="p-4 text-slate-400">-</td>
+                        <td class="p-4 font-semibold text-slate-700">To/By Opening Balance Migration</td>
+                        <td class="p-4 text-right font-bold privacy-target">${isDebitGroup ? `₹${op.toLocaleString('en-IN')}` : '-'}</td>
+                        <td class="p-4 text-right font-bold privacy-target">${!isDebitGroup ? `₹${op.toLocaleString('en-IN')}` : '-'}</td>
+                    </tr>
+                `;
+            }
+
             const activeTraceArray = globalJournalVouchers.filter(jv => jv.drAccountId === pickerId || jv.crAccountId === pickerId);
             const chronologicalLineItems = [...activeTraceArray].reverse();
 
-            if(chronologicalLineItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-xs text-slate-400">No transactional entry lines posted to this ledger account yet.</td></tr>`;
+            if(chronologicalLineItems.length === 0 && parseFloat(accountRef.openingBalance || 0) === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-xs text-slate-400">No transactions posted to this ledger account yet.</td></tr>`;
                 return;
             }
 
@@ -844,22 +890,60 @@
             }
         }
 
+        // VOUCHER MANAGEMENT ALTERATION SUBSYSTEMS
         function openJournalModal() {
+            document.getElementById('journalForm').reset();
+            document.getElementById('jv-id').value = '';
+            
+            const optionsBuffer = chartOfAccountsArray.map(a => `<option value="${a.id}">[${a.id}] ${a.name}</option>`).join('');
+            document.getElementById('jv-dr-account').innerHTML = optionsBuffer;
+            document.getElementById('jv-cr-account').innerHTML = optionsBuffer;
+
             const today = new Date();
             document.getElementById('jv-date').value = today.toISOString().split('T')[0];
             document.getElementById('jv-time').value = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('jv-modal-title').innerText = "Pass Balanced Journal Voucher";
+            document.getElementById('jv-submit-btn').innerText = "Post Balanced Journal Entry";
+            
             resetFileUploadControl();
             document.getElementById('journalModal').classList.remove('hidden');
         }
 
+        function populateVoucherAlterMode(id) {
+            const jv = globalJournalVouchers.find(j => j.id === id);
+            if(!jv) return;
+
+            openJournalModal();
+
+            document.getElementById('jv-id').value = jv.id;
+            document.getElementById('jv-date').value = jv.date;
+            document.getElementById('jv-time').value = jv.time;
+            document.getElementById('jv-dr-account').value = jv.drAccountId;
+            document.getElementById('jv-cr-account').value = jv.crAccountId;
+            document.getElementById('jv-dr-amount').value = jv.amount;
+            document.getElementById('jv-cr-amount').value = jv.amount;
+            document.getElementById('jv-desc').value = jv.description;
+
+            if(jv.attachment) {
+                globalAttachedFileBlobBase64 = jv.attachment.blob;
+                globalAttachedFileName = jv.attachment.name;
+                globalAttachedFileType = jv.attachment.type;
+                document.getElementById('file-upload-label').innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 mx-auto mb-1 text-emerald-500"></i> Kept: <span class="text-indigo-600 font-bold">${jv.attachment.name}</span>`;
+                lucide.createIcons();
+            }
+
+            document.getElementById('jv-modal-title').innerText = `Alter Journal Voucher Entry`;
+            document.getElementById('jv-submit-btn').innerText = "Save Voucher Alterations";
+        }
+
         function closeJournalModal() {
             document.getElementById('journalModal').classList.add('hidden');
-            document.getElementById('journalForm').reset();
         }
 
         async function saveJournalVoucher(event) {
             event.preventDefault();
-
+            const id = document.getElementById('jv-id').value;
             const date = document.getElementById('jv-date').value;
             const time = document.getElementById('jv-time').value;
             const drAccId = document.getElementById('jv-dr-account').value;
@@ -868,12 +952,13 @@
             const desc = document.getElementById('jv-desc').value;
 
             if (drAccId === crAccId) {
-                alert("Accounting Rule Mismatch: Debit and Credit lines cannot post to identical ledger IDs.");
+                alert("Accounting Rule Mismatch: Debit and Credit lines cannot map to the same account.");
                 return;
             }
 
+            const finalId = id ? id : 'JV_' + Date.now();
             const jvPayload = {
-                id: 'JV_' + Date.now(),
+                id: finalId,
                 date: date,
                 time: time,
                 drAccountId: drAccId,
@@ -888,7 +973,10 @@
             };
 
             await saveRecordToDB("journals", jvPayload);
-            globalJournalVouchers.unshift(jvPayload);
+            
+            const idx = globalJournalVouchers.findIndex(j => j.id === finalId);
+            if(idx > -1) globalJournalVouchers[idx] = jvPayload; // Alter mode swap
+            else globalJournalVouchers.unshift(jvPayload); // New creation attach
 
             closeJournalModal();
             refreshFinancialStatementsEngine();
@@ -897,8 +985,7 @@
         }
 
         async function purgeJournalVoucher(id) {
-            if (!confirm("Delete this journal voucher? It will alter your financial statements balances.")) return;
-            
+            if (!confirm("Delete this journal voucher permanently?")) return;
             await deleteRecordFromDB("journals", id);
             globalJournalVouchers = globalJournalVouchers.filter(j => j.id !== id);
 
@@ -907,6 +994,7 @@
             if (runtimeActiveTab === 'ledgers') renderIndividualLedgerTrace();
         }
 
+        // PERSISTENT FILE OPERATIONS
         function handleFileProcessing(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -990,7 +1078,7 @@
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj));
             const dlAnchor = document.createElement('a');
             dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `Accounting_Ledger_Master_Backup_${new Date().toISOString().slice(0,10)}.json`);
+            dlAnchor.setAttribute("download", `Accounting_Master_Alter_Backup_${new Date().toISOString().slice(0,10)}.json`);
             document.body.appendChild(dlAnchor);
             dlAnchor.click();
             dlAnchor.remove();
@@ -1004,30 +1092,18 @@
                 try {
                     const parsedData = JSON.parse(e.target.result);
                     if (parsedData.accounts && parsedData.journals) {
-                        if (confirm("Restore from backup? This will overwrite your current device logs.")) {
-                            const txA = db.transaction("accounts", "readwrite").objectStore("accounts").clear();
-                            const txJ = db.transaction("journals", "readwrite").objectStore("journals").clear();
+                        if (confirm("Restore from backup JSON? This clears existing browser maps.")) {
+                            db.transaction("accounts", "readwrite").objectStore("accounts").clear();
+                            db.transaction("journals", "readwrite").objectStore("journals").clear();
                             for (const acc of parsedData.accounts) await saveRecordToDB("accounts", acc);
                             for (const jv of parsedData.journals) await saveRecordToDB("journals", jv);
                             alert("Accounting workspace restored successfully!");
                             window.location.reload();
                         }
-                    } else { alert("Invalid architecture files."); }
-                } catch(err) { alert("Error reading system configuration backup matrices."); }
+                    } else { alert("Invalid architecture JSON format."); }
+                } catch(err) { alert("Error reading system backup maps."); }
             };
             reader.readAsText(file);
-        }
-
-        let storedSecurityPinCode = localStorage.getItem("appSecurityVaultPin") || null;
-        if (storedSecurityPinCode) document.getElementById('pinModal').classList.remove('hidden');
-
-        function verifyPin() {
-            if (document.getElementById('pinInput').value === storedSecurityPinCode) {
-                document.getElementById('pinModal').classList.add('hidden');
-            } else {
-                alert("PIN mismatch.");
-                document.getElementById('pinInput').value = '';
-            }
         }
 
         window.onload = () => { initIndexedDBEngine(); };
