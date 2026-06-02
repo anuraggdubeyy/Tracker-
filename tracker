@@ -1,1 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinWorkspace - Professional Double-Entry Accounting Core</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .privacy-blur { filter: blur(6px) !important; transition: filter 0.2s ease; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        @media (max-width: 768px) {
+            .desktop-sidebar { display: none; }
+            .mobile-bottom-nav { display: flex; }
+            .main-content { margin-left: 0 !important; margin-bottom: 70px; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased">
 
+    <div id="pinModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center border border-slate-100">
+            <h3 class="text-xl font-bold mb-2 text-slate-900">Secure Access Lock</h3>
+            <p class="text-sm text-slate-500 mb-6" id="pinModalDesc">Enter your 4-digit PIN to access your vault</p>
+            <input type="password" id="pinInput" maxlength="4" class="tracking-widest text-center text-2xl font-bold w-32 border-b-2 border-slate-300 focus:border-indigo-600 outline-none pb-2 mb-6" placeholder="••••">
+            <button onclick="verifyPin()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition">Unlock Tracker</button>
+        </div>
+    </div>
+
+    <aside class="desktop-sidebar fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col z-30">
+        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><i data-lucide="book-open" class="w-6 h-6"></i></div>
+                <span class="font-bold text-lg tracking-tight text-slate-900">FinWorkspace</span>
+            </div>
+            <button onclick="togglePrivacyMode()" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg" title="Privacy Toggle">
+                <i data-lucide="eye" id="privacyIcon" class="w-4 h-4"></i>
+            </button>
+        </div>
+        <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar">
+            <button onclick="switchTab('dashboard')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition bg-indigo-50 text-indigo-600" id="tab-dashboard">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+            </button>
+            <button onclick="switchTab('journal')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50" id="tab-journal">
+                <i data-lucide="book-text" class="w-4 h-4"></i> Journal Entries
+            </button>
+            <button onclick="switchTab('ledgers')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50" id="tab-ledgers">
+                <i data-lucide="folder-tree" class="w-4 h-4"></i> General Ledgers
+            </button>
+            <button onclick="switchTab('pl')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50" id="tab-pl">
+                <i data-lucide="scale" class="w-4 h-4"></i> Profit & Loss (P&L)
+            </button>
+            <button onclick="switchTab('bs')" class="tab-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition text-slate-600 hover:bg-slate-50" id="tab-bs">
+                <i data-lucide="building" class="w-4 h-4"></i> Balance Sheet
+            </button>
+        </nav>
+        <div class="p-4 border-t border-slate-100 space-y-2">
+            <button onclick="exportBackup()" class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 py-2 rounded-lg transition"><i data-lucide="download" class="w-3.5 h-3.5"></i> Backup JSON</button>
+            <input type="file" id="importFile" class="hidden" onchange="importBackup(event)">
+            <button onclick="document.getElementById('importFile').click()" class="w-full flex items-center justify-center gap-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 py-2 rounded-lg transition"><i data-lucide="upload" class="w-3.5 h-3.5"></i> Restore JSON</button>
+        </div>
+    </aside>
+
+    <nav class="mobile-bottom-nav fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-40 hidden justify-around items-center py-2 shadow-lg">
+        <button onclick="switchTab('dashboard')" class="flex flex-col items-center gap-0.5 text-indigo-600" id="m-tab-dashboard"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="text-[10px] font-medium">Home</span></button>
+        <button onclick="switchTab('journal')" class="flex flex-col items-center gap-0.5 text-slate-400" id="m-tab-journal"><i data-lucide="book-text" class="w-5 h-5"></i><span class="text-[10px] font-medium">Journal</span></button>
+        <button onclick="openJournalModal()" class="flex flex-col items-center justify-center -mt-6 bg-indigo-600 text-white rounded-full p-3.5 shadow-md shadow-indigo-200"><i data-lucide="plus" class="w-6 h-6"></i></button>
+        <button onclick="switchTab('pl')" class="flex flex-col items-center gap-0.5 text-slate-400" id="m-tab-pl"><i data-lucide="scale" class="w-5 h-5"></i><span class="text-[10px] font-medium">P&L</span></button>
+        <button onclick="switchTab('bs')" class="flex flex-col items-center gap-0.5 text-slate-400" id="m-tab-bs"><i data-lucide="building" class="w-5 h-5"></i><span class="text-[10px] font-medium">B/S</span></button>
+    </nav>
+
+    <main class="main-content ml-64 min-h-screen flex flex-col transition-all duration-300">
+        <header class="bg-white border-b border-slate-200 h-16 px-6 flex items-center justify-between sticky top-0 z-20">
+            <div class="flex items-center gap-3 w-full max-w-md">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute ml-3"></i>
+                <input type="text" id="globalSearch" oninput="runGlobalSearch()" placeholder="Search narration or account (Ctrl + K)..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-1.5 text-sm focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="openJournalModal()" class="hidden md:flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-4 py-2 rounded-xl transition shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i> Pass Journal Entry</button>
+            </div>
+        </header>
+
+        <div class="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+            
+            <section id="view-dashboard" class="view-panel space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm relative overflow-hidden">
+                        <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Total Assets</div>
+                        <div class="text-2xl font-bold text-slate-900 privacy-target" id="metric-total-assets">₹0.00</div>
+                        <div class="absolute right-4 bottom-4 text-slate-100"><i data-lucide="wallet" class="w-12 h-12"></i></div>
+                    </div>
+                    <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm relative overflow-hidden">
+                        <div class="text-xs font-semibold uppercase tracking-wider text-emerald-500 mb-1">Total Revenues</div>
+                        <div class="text-2xl font-bold text-slate-900 privacy-target" id="metric-total-revenue">₹0.00</div>
+                        <div class="absolute right-4 bottom-4 text-emerald-50"><i data-lucide="trending-up" class="w-12 h-12"></i></div>
+                    </div>
+                    <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm relative overflow-hidden">
+                        <div class="text-xs font-semibold uppercase tracking-wider text-rose-500 mb-1">Total Expenses</div>
+                        <div class="text-2xl font-bold text-slate-900 privacy-target" id="metric-total-expenses">₹0.00</div>
+                        <div class="absolute right-4 bottom-4 text-rose-50"><i data-lucide="trending-down" class="w-12 h-12"></i></div>
+                    </div>
+                    <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm relative overflow-hidden">
+                        <div class="text-xs font-semibold uppercase tracking-wider text-indigo-500 mb-1">Net Profit / Surplus</div>
+                        <div class="text-2xl font-bold text-slate-900 privacy-target" id="metric-net-profit">₹0.00</div>
+                        <div class="absolute right-4 bottom-4 text-indigo-50"><i data-lucide="award" class="w-12 h-12"></i></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+                        <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2"><i data-lucide=" Landmark" class="w-4 h-4 text-indigo-500"></i> Cash & Bank Balances</h3>
+                        <div class="space-y-3" id="dash-cash-balances"></div>
+                    </div>
+                    <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+                        <h3 class="font-bold text-slate-900 text-sm mb-3 flex items-center gap-2"><i data-lucide="pie-chart" class="w-4 h-4 text-rose-500"></i> Expense Burn Rate Overview</h3>
+                        <div class="space-y-3" id="dash-expense-breakdown"></div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-900 text-sm">Recent Double-Entry Journal Passes</h3>
+                        <button onclick="switchTab('journal')" class="text-xs text-indigo-600 font-semibold hover:underline">View Day Book / Journals</button>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-400 font-medium text-xs border-b border-slate-100">
+                                    <th class="p-4">Date/Time</th>
+                                    <th class="p-4">Particulars (Account Titles)</th>
+                                    <th class="p-4 w-24 text-right">Debit (Dr.)</th>
+                                    <th class="p-4 w-24 text-right">Credit (Cr.)</th>
+                                    <th class="p-4">Narration Matrix</th>
+                                    <th class="p-4 text-center">Docs</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-journal-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-journal" class="view-panel space-y-6 hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Journal Book (Day Book)</h2>
+                        <p class="text-xs text-slate-500">Chronological history of balancing double-entry transactions passed in the ecosystem.</p>
+                    </div>
+                    <button onclick="openJournalModal()" class="bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5"><i data-lucide="plus" class="w-3.5 h-3.5"></i> Add New Entry</button>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-400 font-medium text-xs border-b border-slate-100">
+                                    <th class="p-4 w-40">Timestamp Sequence</th>
+                                    <th class="p-4">Particular Account Lines</th>
+                                    <th class="p-4 text-right w-32">Debit (₹)</th>
+                                    <th class="p-4 text-right w-32">Credit (₹)</th>
+                                    <th class="p-4 max-w-xs">Narration / References</th>
+                                    <th class="p-4 text-center w-20">Docs</th>
+                                    <th class="p-4 text-center w-20">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="master-journal-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-ledgers" class="view-panel space-y-6 hidden">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">General Ledger Accounts</h2>
+                    <p class="text-xs text-slate-500">Select any chart of account below to audit its specific ledger T-table trace.</p>
+                </div>
+                <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center gap-4">
+                    <label class="text-xs font-semibold text-slate-500 uppercase">Select Target Account Ledger:</label>
+                    <select id="ledger-account-picker" onchange="renderIndividualLedgerTrace()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500"></select>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <h3 class="font-bold text-base text-slate-900" id="ledger-title-display">Account Ledger</h3>
+                        <div class="text-sm font-bold text-slate-700">Closing Balance: <span id="ledger-closing-bal-display" class="privacy-target text-indigo-600">₹0.00</span></div>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-400 font-medium text-xs border-b border-slate-100">
+                                    <th class="p-4 w-1/4">Date</th>
+                                    <th class="p-4 w-2/5">Contra / Offset Particulars</th>
+                                    <th class="p-4 text-right w-1/6">Debit (Dr.)</th>
+                                    <th class="p-4 text-right w-1/6">Credit (Cr.)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ledger-trace-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-pl" class="view-panel space-y-6 hidden">
+                <div class="max-w-2xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-8 space-y-6">
+                    <div class="text-center border-b border-slate-100 pb-6">
+                        <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Profit & Loss Statement</h2>
+                        <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">For the Operating Period</p>
+                    </div>
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1">Revenue / Inflows</h4>
+                        <div id="pl-revenue-container" class="space-y-2 text-sm"></div>
+                        <div class="flex justify-between font-semibold text-sm bg-slate-50 p-2.5 rounded-xl mt-1">
+                            <span>Total Revenue (A)</span>
+                            <span id="pl-total-revenue-val" class="privacy-target">₹0.00</span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1">Expenses / Outflows</h4>
+                        <div id="pl-expense-container" class="space-y-2 text-sm"></div>
+                        <div class="flex justify-between font-semibold text-sm bg-slate-50 p-2.5 rounded-xl mt-1">
+                            <span>Total Operating Expenses (B)</span>
+                            <span id="pl-total-expense-val" class="privacy-target">₹0.00</span>
+                        </div>
+                    </div>
+                    <div class="border-t-2 border-double border-slate-200 pt-4 flex justify-between font-bold text-base text-slate-900 bg-indigo-50/50 p-4 rounded-xl">
+                        <span id="pl-net-label">Net Profit / Surplus (A - B)</span>
+                        <span id="pl-net-profit-val" class="privacy-target text-indigo-600">₹0.00</span>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-bs" class="view-panel space-y-6 hidden">
+                <div class="max-w-4xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm p-8 space-y-6">
+                    <div class="text-center border-b border-slate-100 pb-6">
+                        <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Statement of Financial Position</h2>
+                        <p class="text-xs text-slate-400 uppercase tracking-widest mt-1">Balance Sheet as on Date</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                        <div class="space-y-4">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1">Liabilities & Capital Equity</h4>
+                            <div id="bs-liabilities-container" class="space-y-2 text-sm"></div>
+                            
+                            <h5 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1 pt-2">Reserves & Surplus</h5>
+                            <div class="flex justify-between text-sm px-1">
+                                <span class="text-slate-600">Retained P&L Net Earnings</span>
+                                <span id="bs-retained-earnings-val" class="privacy-target font-medium">₹0.00</span>
+                            </div>
+
+                            <div class="flex justify-between font-bold text-sm bg-slate-50 p-3 rounded-xl mt-4 border-t border-slate-200">
+                                <span>Total Equity & Liabilities</span>
+                                <span id="bs-total-liabilities-val" class="privacy-target text-slate-900">₹0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 border-t md:border-t-0 md:border-l border-slate-100 md:pl-8">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-1">Assets / Financial Holdings</h4>
+                            <div id="bs-assets-container" class="space-y-2 text-sm"></div>
+                            
+                            <div class="flex justify-between font-bold text-sm bg-slate-50 p-3 rounded-xl mt-4 border-t border-slate-200">
+                                <span>Total Capital Assets</span>
+                                <span id="bs-total-assets-val" class="privacy-target text-slate-900">₹0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="bs-equilibrium-flag" class="text-center text-xs font-semibold py-2 rounded-xl"></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <div id="journalModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[95vh] overflow-y-auto custom-scrollbar border border-slate-100">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-base font-bold text-slate-900">Pass Balanced Journal Voucher</h3>
+                <button onclick="closeJournalModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="journalForm" onsubmit="saveJournalVoucher(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Voucher Date</label>
+                        <input type="date" id="jv-date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Voucher Time</label>
+                        <input type="time" id="jv-time" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50/40 p-4 rounded-xl border border-emerald-100 space-y-3">
+                    <span class="text-xs font-bold text-emerald-700 tracking-wide uppercase block">1. Debit Leg (Receiver / Asset / Expense)</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-0.5">Debit Ledger Account</label>
+                            <select id="jv-dr-account" required class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs focus:outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-0.5">Debit Amount (₹)</label>
+                            <input type="number" step="0.01" id="jv-dr-amount" oninput="matchCreditAmountField()" required class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs focus:outline-none" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-rose-50/40 p-4 rounded-xl border border-rose-100 space-y-3">
+                    <span class="text-xs font-bold text-rose-700 tracking-wide uppercase block">2. Credit Leg (Giver / Liability / Revenue)</span>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-0.5">Credit Ledger Account</label>
+                            <select id="jv-cr-account" required class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs focus:outline-none"></select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-0.5">Credit Amount (₹)</label>
+                            <input type="number" step="0.01" id="jv-cr-amount" readonly required class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-400" placeholder="0.00">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Narration / Context / Particular Statement</label>
+                    <input type="text" id="jv-desc" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none" placeholder="Being payment made towards...">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Persistent Receipt Attachment (IndexedDB Native)</label>
+                    <div class="border-2 border-dashed border-slate-200 hover:border-indigo-500 rounded-xl p-3 text-center transition cursor-pointer relative">
+                        <input type="file" id="jv-file" onchange="handleFileProcessing(event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                        <div class="text-xs text-slate-400" id="file-upload-label"><i data-lucide="paperclip" class="w-4 h-4 mx-auto mb-1"></i> Upload Receipt Document</div>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition">Post Balanced Journal Entry</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="lightboxModal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4" onclick="closeLightbox()">
+        <div class="max-w-3xl max-h-[85vh] relative" onclick="event.stopPropagation()">
+            <button onclick="closeLightbox()" class="absolute -top-10 right-0 text-white flex items-center gap-1 text-sm bg-slate-800/80 px-3 py-1.5 rounded-lg"><i data-lucide="x" class="w-4 h-4"></i> Close</button>
+            <img id="lightboxImage" src="" alt="Receipt Scan" class="max-w-full max-h-[80vh] rounded-xl shadow-2xl object-contain hidden">
+            <div id="lightboxFileFallback" class="bg-white p-8 rounded-xl text-center hidden space-y-4 max-w-sm">
+                <i data-lucide="file-text" class="w-12 h-12 text-indigo-500 mx-auto"></i>
+                <a id="lightboxDownloadBtn" href="#" download class="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg text-xs font-medium">Download File</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CHART OF ACCOUNTS DEFINITION - MASTER REFERENCE ARRAY
+        const CHART_OF_ACCOUNTS = [
+            // ASSETS (Normal Balance: DEBIT)
+            { id: '1010', name: 'Primary Bank Account', type: 'ASSET' },
+            { id: '1020', name: 'Physical Cash Vault', type: 'ASSET' },
+            { id: '1030', name: 'UPI Digital Wallet', type: 'ASSET' },
+            { id: '1040', name: 'Loans & Advances (Lent)', type: 'ASSET' },
+            // LIABILITIES & EQUITY (Normal Balance: CREDIT)
+            { id: '2010', name: 'Capital Account Equity', type: 'EQUITY' },
+            { id: '2020', name: 'Hand Loans Borrowed', type: 'LIABILITY' },
+            // REVENUES (Normal Balance: CREDIT)
+            { id: '3010', name: 'Professional Revenue / Salary', type: 'REVENUE' },
+            { id: '3020', name: 'Secondary Inflow / Interest', type: 'REVENUE' },
+            // EXPENSES (Normal Balance: DEBIT)
+            { id: '4010', name: 'Home Operational Expenses', type: 'EXPENSE' },
+            { id: '4020', name: 'Daily Consumption Needs', type: 'EXPENSE' },
+            { id: '4030', name: 'Spiritual Donations & Charity', type: 'EXPENSE' },
+            { id: '4040', name: 'Pocket Money Payouts', type: 'EXPENSE' }
+        ];
+
+        let db = null;
+        let globalJournalVouchers = [];
+        let runtimeActiveTab = 'dashboard';
+        let privacyModeState = false;
+        
+        let globalAttachedFileBlobBase64 = null;
+        let globalAttachedFileName = null;
+        let globalAttachedFileType = null;
+
+        // INITIALIZE DATABASE 
+        function initIndexedDBEngine() {
+            const request = indexedDB.open("FinAccountingCoreDB", 1);
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                bootloaderSequencer();
+            };
+            request.onupgradeneeded = (e) => {
+                const upgradingDb = e.target.result;
+                upgradingDb.createObjectStore("journals", { keyPath: "id" });
+            };
+        }
+
+        async function bootloaderSequencer() {
+            globalJournalVouchers = await fetchJournalsFromDB();
+            // Chronological Sorting (Newest First)
+            globalJournalVouchers.sort((x, y) => new Date(y.date + 'T' + y.time) - new Date(x.date + 'T' + x.time));
+            
+            buildVoucherAccountDropdowns();
+            refreshFinancialStatementsEngine();
+            setupKeyboardShortcutIntercepts();
+        }
+
+        function fetchJournalsFromDB() {
+            return new Promise((resolve) => {
+                const tx = db.transaction("journals", "readonly");
+                const store = tx.objectStore("journals");
+                const req = store.getAll();
+                req.onsuccess = () => resolve(req.result || []);
+            });
+        }
+
+        function writeJournalToDB(jvRecord) {
+            return new Promise((resolve) => {
+                const tx = db.transaction("journals", "readwrite");
+                const store = tx.objectStore("journals");
+                store.put(jvRecord);
+                tx.oncomplete = () => resolve(true);
+            });
+        }
+
+        function deleteJournalFromDB(id) {
+            return new Promise((resolve) => {
+                const tx = db.transaction("journals", "readwrite");
+                const store = tx.objectStore("journals");
+                store.delete(id);
+                tx.oncomplete = () => resolve(true);
+            });
+        }
+
+        // POPULATE ACCOUNT DROPDOWNS
+        function buildVoucherAccountDropdowns() {
+            const drSelect = document.getElementById('jv-dr-account');
+            const crSelect = document.getElementById('jv-cr-account');
+            const pickerSelect = document.getElementById('ledger-account-picker');
+
+            let optionsDom = `<option value="">Select Account Node</option>`;
+            let pickerDom = '';
+
+            CHART_OF_ACCOUNTS.forEach(acc => {
+                optionsDom += `<option value="${acc.id}">[${acc.id}] ${acc.name} (${acc.type})</option>`;
+                pickerDom += `<option value="${acc.id}">[${acc.id}] ${acc.name}</option>`;
+            });
+
+            drSelect.innerHTML = optionsDom;
+            crSelect.innerHTML = optionsDom;
+            pickerSelect.innerHTML = pickerDom;
+        }
+
+        // MATCH DEBIT AND CREDIT VALUES IN THE ENTRY FORM
+        function matchCreditAmountField() {
+            document.getElementById('jv-cr-amount').value = document.getElementById('jv-dr-amount').value;
+        }
+
+        // RECALCULATE CLOSING BALANCES FOR ALL LEDGERS
+        function calculateLedgerBalances() {
+            const balances = {};
+            CHART_OF_ACCOUNTS.forEach(a => balances[a.id] = 0);
+
+            globalJournalVouchers.forEach(jv => {
+                const drAcc = CHART_OF_ACCOUNTS.find(a => a.id === jv.drAccountId);
+                const crAcc = CHART_OF_ACCOUNTS.find(a => a.id === jv.crAccountId);
+                const amt = parseFloat(jv.amount);
+
+                if (drAcc) {
+                    if (drAcc.type === 'ASSET' || drAcc.type === 'EXPENSE') balances[jv.drAccountId] += amt;
+                    else balances[jv.drAccountId] -= amt; // Liability/Equity/Revenue decreases with Debit
+                }
+                if (crAcc) {
+                    if (crAcc.type === 'LIABILITY' || crAcc.type === 'EQUITY' || crAcc.type === 'REVENUE') balances[jv.crAccountId] += amt;
+                    else balances[jv.crAccountId] -= amt; // Asset/Expense decreases with Credit
+                }
+            });
+            return balances;
+        }
+
+        // GENERATE FINANCIAL STATEMENTS & METRICS
+        function refreshFinancialStatementsEngine() {
+            const ledgerBalances = calculateLedgerBalances();
+
+            // Calculate Dashboard Totals
+            let assetsSum = 0, liabilitiesSum = 0, revenuesSum = 0, expensesSum = 0, equitySum = 0;
+            CHART_OF_ACCOUNTS.forEach(acc => {
+                const bal = ledgerBalances[acc.id];
+                if (acc.type === 'ASSET') assetsSum += bal;
+                if (acc.type === 'LIABILITY') liabilitiesSum += bal;
+                if (acc.type === 'EQUITY') equitySum += bal;
+                if (acc.type === 'REVENUE') revenuesSum += bal;
+                if (acc.type === 'EXPENSE') expensesSum += bal;
+            });
+
+            const netProfitSurplus = revenuesSum - expensesSum;
+
+            document.getElementById('metric-total-assets').innerText = `₹${assetsSum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById('metric-total-revenue').innerText = `₹${revenuesSum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById('metric-total-expenses').innerText = `₹${expensesSum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById('metric-net-profit').innerText = `₹${netProfitSurplus.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            
+            const profitLabel = document.getElementById('metric-net-profit').parentElement;
+            if (netProfitSurplus < 0) {
+                profitLabel.firstElementChild.innerText = "Net Deficit / Loss";
+                document.getElementById('metric-net-profit').className = "text-2xl font-bold text-rose-600 privacy-target";
+            } else {
+                profitLabel.firstElementChild.innerText = "Net Profit / Surplus";
+                document.getElementById('metric-net-profit').className = "text-2xl font-bold text-indigo-600 privacy-target";
+            }
+
+            // Build Cash Dashboard Cards
+            const cashContainer = document.getElementById('dash-cash-balances');
+            cashContainer.innerHTML = '';
+            CHART_OF_ACCOUNTS.filter(a => a.id.startsWith('10')).forEach(acc => {
+                cashContainer.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-xs">
+                        <span class="font-medium text-slate-700">${acc.name}</span>
+                        <span class="font-bold text-slate-900 privacy-target">₹${ledgerBalances[acc.id].toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                `;
+            });
+
+            // Build Expense Dashboard Breakdown Cards
+            const expContainer = document.getElementById('dash-expense-breakdown');
+            expContainer.innerHTML = '';
+            CHART_OF_ACCOUNTS.filter(a => a.type === 'EXPENSE').forEach(acc => {
+                expContainer.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-50 p-2.5 rounded-xl text-xs">
+                        <span class="font-medium text-slate-700">${acc.name}</span>
+                        <span class="font-bold text-rose-600 privacy-target">₹${ledgerBalances[acc.id].toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                `;
+            });
+
+            // Update Core Views
+            renderDashboardJournalTable();
+            renderProfitAndLossStatement(ledgerBalances, revenuesSum, expensesSum, netProfitSurplus);
+            renderBalanceSheetStatement(ledgerBalances, assetsSum, liabilitiesSum, equitySum, netProfitSurplus);
+            
+            applyPrivacyBlurs();
+            lucide.createIcons();
+        }
+
+        // RENDER RECENT ENTRIES TO DASHBOARD TABLE
+        function renderDashboardJournalTable() {
+            const tbody = document.getElementById('dashboard-journal-tbody');
+            tbody.innerHTML = '';
+            const previewSet = globalJournalVouchers.slice(0, 5);
+
+            if(previewSet.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-xs text-slate-400">No journal entries found in local storage.</td></tr>`;
+                return;
+            }
+
+            previewSet.forEach(jv => {
+                const drAccName = CHART_OF_ACCOUNTS.find(a => a.id === jv.drAccountId)?.name;
+                const crAccName = CHART_OF_ACCOUNTS.find(a => a.id === jv.crAccountId)?.name;
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-50 text-xs hover:bg-slate-50 transition">
+                        <td class="p-4 text-slate-400 font-medium whitespace-nowrap">${jv.date}<br><span class="text-[10px]">${jv.time}</span></td>
+                        <td class="p-4 space-y-1">
+                            <div class="font-semibold text-indigo-600">${drAccName} <span class="text-[10px] text-slate-400 font-normal">Dr.</span></div>
+                            <div class="pl-4 font-semibold text-emerald-600">To ${crAccName} <span class="text-[10px] text-slate-400 font-normal">Cr.</span></div>
+                        </td>
+                        <td class="p-4 text-right font-bold text-slate-900 privacy-target">₹${parseFloat(jv.amount).toLocaleString('en-IN')}</td>
+                        <td class="p-4 text-right font-bold text-slate-900 privacy-target">₹${parseFloat(jv.amount).toLocaleString('en-IN')}</td>
+                        <td class="p-4 text-slate-500 italic max-w-xs truncate">${jv.description}</td>
+                        <td class="p-4 text-center">
+                            ${jv.attachment ? `<button onclick="viewAttachmentDocument('${jv.id}')" class="text-indigo-600"><i data-lucide="paperclip" class="w-3.5 h-3.5 mx-auto"></i></button>` : `<span class="text-slate-300">-</span>`}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // TAB ROUTING CONTROLLER
+        function switchTab(targetViewId) {
+            runtimeActiveTab = targetViewId;
+            document.querySelectorAll('.view-panel').forEach(view => view.classList.add('hidden'));
+            document.getElementById(`view-${targetViewId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-50', 'text-indigo-600');
+                btn.classList.add('text-slate-600', 'hover:bg-slate-50');
+            });
+            const activeBtn = document.getElementById(`tab-${targetViewId}`);
+            if (activeBtn) activeBtn.classList.add('bg-indigo-50', 'text-indigo-600');
+
+            if (targetViewId === 'journal') renderMasterJournalBook();
+            if (targetViewId === 'ledgers') renderIndividualLedgerTrace();
+            if (targetViewId === 'pl' || targetViewId === 'bs') refreshFinancialStatementsEngine();
+        }
+
+        // RENDER ENTRY IN JOURNAL BOOK
+        function renderMasterJournalBook() {
+            const tbody = document.getElementById('master-journal-tbody');
+            tbody.innerHTML = '';
+            
+            const searchToken = document.getElementById('globalSearch').value.toLowerCase();
+
+            const filteredSet = globalJournalVouchers.filter(jv => {
+                if(!searchToken) return true;
+                const drName = CHART_OF_ACCOUNTS.find(a => a.id === jv.drAccountId)?.name.toLowerCase();
+                const crName = CHART_OF_ACCOUNTS.find(a => a.id === jv.crAccountId)?.name.toLowerCase();
+                return jv.description.toLowerCase().includes(searchToken) || drName.includes(searchToken) || crName.includes(searchToken);
+            });
+
+            if(filteredSet.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-xs text-slate-400">No matching journals found.</td></tr>`;
+                return;
+            }
+
+            filteredSet.forEach(jv => {
+                const drAccName = CHART_OF_ACCOUNTS.find(a => a.id === jv.drAccountId)?.name;
+                const crAccName = CHART_OF_ACCOUNTS.find(a => a.id === jv.crAccountId)?.name;
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 text-xs hover:bg-slate-50/50 transition">
+                        <td class="p-4 text-slate-500 whitespace-nowrap font-medium">${jv.date} <span class="text-slate-400 text-[10px] ml-1">${jv.time}</span></td>
+                        <td class="p-4 space-y-1">
+                            <div class="font-bold text-slate-800">${drAccName} <span class="text-[10px] text-slate-400 font-normal">Dr.</span></div>
+                            <div class="pl-4 font-bold text-slate-600">To ${crAccName} <span class="text-[10px] text-slate-400 font-normal">Cr.</span></div>
+                        </td>
+                        <td class="p-4 text-right font-bold text-slate-900 privacy-target">₹${parseFloat(jv.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        <td class="p-4 text-right font-bold text-slate-900 privacy-target">₹${parseFloat(jv.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                        <td class="p-4 text-slate-500 italic max-w-xs truncate">${jv.description}</td>
+                        <td class="p-4 text-center">
+                            ${jv.attachment ? `<button onclick="viewAttachmentDocument('${jv.id}')" class="bg-indigo-50 text-indigo-600 p-1.5 rounded-lg inline-block"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>` : `<span class="text-slate-300">-</span>`}
+                        </td>
+                        <td class="p-4 text-center">
+                            <button onclick="purgeJournalVoucher('${jv.id}')" class="text-rose-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-3.5 h-3.5 mx-auto"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            applyPrivacyBlurs();
+            lucide.createIcons();
+        }
+
+        // GENERAL LEDGER AUDIT T-TRACE SUBSYSTEM
+        function renderIndividualLedgerTrace() {
+            const pickerId = document.getElementById('ledger-account-picker').value;
+            const accountRef = CHART_OF_ACCOUNTS.find(a => a.id === pickerId);
+            if (!accountRef) return;
+
+            document.getElementById('ledger-title-display').innerText = `Ledger Account: [${accountRef.id}] ${accountRef.name} (${accountRef.type})`;
+            
+            const balances = calculateLedgerBalances();
+            document.getElementById('ledger-closing-bal-display').innerText = `₹${balances[accountRef.id].toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+            const tbody = document.getElementById('ledger-trace-tbody');
+            tbody.innerHTML = '';
+
+            // Filter out related journal entry items
+            const activeTraceArray = globalJournalVouchers.filter(jv => jv.drAccountId === pickerId || jv.crAccountId === pickerId);
+            // Reverse array layout to display oldest transaction line sequences first
+            const chronologicalLineItems = [...activeTraceArray].reverse();
+
+            if(chronologicalLineItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-xs text-slate-400">No transactional entry lines posted to this ledger account yet.</td></tr>`;
+                return;
+            }
+
+            chronologicalLineItems.forEach(jv => {
+                const isDebitLeg = (jv.drAccountId === pickerId);
+                const contraAccountName = CHART_OF_ACCOUNTS.find(a => a.id === (isDebitLeg ? jv.crAccountId : jv.drAccountId))?.name;
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-50 text-xs hover:bg-slate-50 transition">
+                        <td class="p-4 text-slate-500">${jv.date}</td>
+                        <td class="p-4 font-medium text-slate-700">${isDebitLeg ? `By ${contraAccountName}` : `To ${contraAccountName}`}</td>
+                        <td class="p-4 text-right font-semibold privacy-target text-slate-900">${isDebitLeg ? `₹${parseFloat(jv.amount).toLocaleString('en-IN')}` : '-'}</td>
+                        <td class="p-4 text-right font-semibold privacy-target text-slate-900">${!isDebitLeg ? `₹${parseFloat(jv.amount).toLocaleString('en-IN')}` : '-'}</td>
+                    </tr>
+                `;
+            });
+            applyPrivacyBlurs();
+        }
+
+        // RENDER PROFIT & LOSS STATEMENTS
+        function renderProfitAndLossStatement(balances, revSum, expSum, netProfit) {
+            const revContainer = document.getElementById('pl-revenue-container');
+            const expContainer = document.getElementById('pl-expense-container');
+
+            revContainer.innerHTML = '';
+            expContainer.innerHTML = '';
+
+            CHART_OF_ACCOUNTS.filter(a => a.type === 'REVENUE').forEach(acc => {
+                revContainer.innerHTML += `
+                    <div class="flex justify-between px-1">
+                        <span class="text-slate-600">${acc.name}</span>
+                        <span class="privacy-target font-medium">₹${balances[acc.id].toLocaleString('en-IN')}</span>
+                    </div>
+                `;
+            });
+
+            CHART_OF_ACCOUNTS.filter(a => a.type === 'EXPENSE').forEach(acc => {
+                expContainer.innerHTML += `
+                    <div class="flex justify-between px-1">
+                        <span class="text-slate-600">${acc.name}</span>
+                        <span class="privacy-target font-medium text-rose-600">₹${balances[acc.id].toLocaleString('en-IN')}</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('pl-total-revenue-val').innerText = `₹${revSum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById('pl-total-expense-val').innerText = `₹${expSum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById('pl-net-profit-val').innerText = `₹${Math.abs(netProfit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+            if (netProfit < 0) {
+                document.getElementById('pl-net-label').innerText = "Net Deficit / Loss for the Period (B - A)";
+                document.getElementById('pl-net-profit-val').className = "privacy-target text-rose-600";
+            } else {
+                document.getElementById('pl-net-label').innerText = "Net Profit / Surplus for the Period (A - B)";
+                document.getElementById('pl-net-profit-val').className = "privacy-target text-indigo-600";
+            }
+        }
+
+        // RENDER REAL-TIME ACCRUAL BALANCE SHEET
+        function renderBalanceSheetStatement(balances, assetSum, liabilitySum, equitySum, netProfit) {
+            const assetContainer = document.getElementById('bs-assets-container');
+            const liabilityContainer = document.getElementById('bs-liabilities-container');
+
+            assetContainer.innerHTML = '';
+            liabilityContainer.innerHTML = '';
+
+            CHART_OF_ACCOUNTS.filter(a => a.type === 'ASSET').forEach(acc => {
+                assetContainer.innerHTML += `
+                    <div class="flex justify-between px-1">
+                        <span class="text-slate-600">${acc.name}</span>
+                        <span class="privacy-target font-medium">₹${balances[acc.id].toLocaleString('en-IN')}</span>
+                    </div>
+                `;
+            });
+
+            CHART_OF_ACCOUNTS.filter(a => a.type === 'LIABILITY' || a.type === 'EQUITY').forEach(acc => {
+                liabilityContainer.innerHTML += `
+                    <div class="flex justify-between px-1">
+                        <span class="text-slate-600">${acc.name}</span>
+                        <span class="privacy-target font-medium">₹${balances[acc.id].toLocaleString('en-IN')}</span>
+                    </div>
+                `;
+            });
+
+            // Double Entry Checks: Total Liabilities = Liabilities + Base Equity + Retained Net profit
+            const combinedLiabilitiesAndEquitySum = liabilitySum + equitySum + netProfit;
+
+            document.getElementById('bs-retained-earnings-val').innerText = `₹${netProfit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById('bs-total-assets-val').innerText = `₹${assetSum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            document.getElementById('bs-total-liabilities-val').innerText = `₹${combinedLiabilitiesAndEquitySum.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+
+            const messageBar = document.getElementById('bs-equilibrium-flag');
+            // Allow minor floating point variances
+            if (Math.abs(assetSum - combinedLiabilitiesAndEquitySum) < 0.05) {
+                messageBar.innerText = "✓ Double-Entry Balance Ledger is perfectly matched and in equilibrium.";
+                messageBar.className = "text-center text-xs font-semibold py-2 rounded-xl bg-emerald-50 text-emerald-700";
+            } else {
+                messageBar.innerText = "⚠️ Balance Sheet Mismatch. Check your manual journal posting lines.";
+                messageBar.className = "text-center text-xs font-semibold py-2 rounded-xl bg-rose-50 text-rose-700";
+            }
+        }
+
+        // MODAL MANAGEMENT OPEN/CLOSE ACTIONS
+        function openJournalModal() {
+            const today = new Date();
+            document.getElementById('jv-date').value = today.toISOString().split('T')[0];
+            document.getElementById('jv-time').value = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
+            resetFileUploadControl();
+            document.getElementById('journalModal').classList.remove('hidden');
+        }
+
+        function closeJournalModal() {
+            document.getElementById('journalModal').classList.add('hidden');
+            document.getElementById('journalForm').reset();
+        }
+
+        // SAVE AND COMMIT VOUCHERS
+        async function saveJournalVoucher(event) {
+            event.preventDefault();
+
+            const date = document.getElementById('jv-date').value;
+            const time = document.getElementById('jv-time').value;
+            const drAccId = document.getElementById('jv-dr-account').value;
+            const crAccId = document.getElementById('jv-cr-account').value;
+            const amount = parseFloat(document.getElementById('jv-dr-amount').value);
+            const desc = document.getElementById('jv-desc').value;
+
+            if (drAccId === crAccId) {
+                alert("Accounting Rule Mismatch: Debit and Credit lines cannot post to identical ledger IDs.");
+                return;
+            }
+
+            const jvPayload = {
+                id: 'JV_' + Date.now(),
+                date: date,
+                time: time,
+                drAccountId: drAccId,
+                crAccountId: crAccId,
+                amount: amount,
+                description: desc,
+                attachment: globalAttachedFileBlobBase64 ? {
+                    blob: globalAttachedFileBlobBase64,
+                    name: globalAttachedFileName,
+                    type: globalAttachedFileType
+                } : null
+            };
+
+            await writeJournalToDB(jvPayload);
+            globalJournalVouchers.unshift(jvPayload);
+
+            closeJournalModal();
+            refreshFinancialStatementsEngine();
+            if (runtimeActiveTab === 'journal') renderMasterJournalBook();
+            if (runtimeActiveTab === 'ledgers') renderIndividualLedgerTrace();
+        }
+
+        // PURGE JOURNAL ENTRIES
+        async function purgeJournalVoucher(id) {
+            if (!confirm("Delete this journal voucher? It will remove entries from both debited and credited accounts.")) return;
+            
+            await deleteJournalFromDB(id);
+            globalJournalVouchers = globalJournalVouchers.filter(j => j.id !== id);
+
+            refreshFinancialStatementsEngine();
+            if (runtimeActiveTab === 'journal') renderMasterJournalBook();
+            if (runtimeActiveTab === 'ledgers') renderIndividualLedgerTrace();
+        }
+
+        // FILE HANDLINGPERSISTENCY STRIPS
+        function handleFileProcessing(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            globalAttachedFileName = file.name;
+            globalAttachedFileType = file.type;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                globalAttachedFileBlobBase64 = e.target.result;
+                document.getElementById('file-upload-label').innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 mx-auto mb-1 text-emerald-500"></i> Attached: <span class="text-indigo-600 font-bold">${globalAttachedFileName}</span>`;
+                lucide.createIcons();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetFileUploadControl() {
+            globalAttachedFileBlobBase64 = null;
+            globalAttachedFileName = null;
+            globalAttachedFileType = null;
+            document.getElementById('file-upload-label').innerHTML = `<i data-lucide="paperclip" class="w-4 h-4 mx-auto mb-1 text-slate-400"></i> Upload Receipt Document`;
+            lucide.createIcons();
+        }
+
+        function viewAttachmentDocument(id) {
+            const jv = globalJournalVouchers.find(j => j.id === id);
+            if (!jv || !jv.attachment) return;
+
+            const att = jv.attachment;
+            const lightbox = document.getElementById('lightboxModal');
+            const imgEl = document.getElementById('lightboxImage');
+            const fallbackEl = document.getElementById('lightboxFileFallback');
+
+            if (att.type.startsWith('image/')) {
+                imgEl.src = att.blob;
+                imgEl.classList.remove('hidden');
+                fallbackEl.classList.add('hidden');
+            } else {
+                imgEl.classList.add('hidden');
+                fallbackEl.classList.remove('hidden');
+                const downBtn = document.getElementById('lightboxDownloadBtn');
+                downBtn.href = att.blob;
+                downBtn.download = att.name;
+            }
+            lightbox.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightboxModal').classList.add('hidden');
+        }
+
+        // PRIVACY SYSTEM
+        function togglePrivacyMode() {
+            privacyModeState = !privacyModeState;
+            const icon = document.getElementById('privacyIcon');
+            icon.setAttribute('data-lucide', privacyModeState ? 'eye-off' : 'eye');
+            lucide.createIcons();
+            applyPrivacyBlurs();
+        }
+
+        function applyPrivacyBlurs() {
+            document.querySelectorAll('.privacy-target').forEach(el => {
+                if (privacyModeState) el.classList.add('privacy-blur');
+                else el.classList.remove('privacy-blur');
+            });
+        }
+
+        // GLOBAL SEARCH & UTILITIES
+        function runGlobalSearch() {
+            if (runtimeActiveTab !== 'journal') switchTab('journal');
+            else renderMasterJournalBook();
+        }
+
+        function setupKeyboardShortcutIntercepts() {
+            window.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    document.getElementById('globalSearch').focus();
+                }
+            });
+        }
+
+        // SYSTEM BACKUP AND RESTORE ENGINE (JSON BASED VOUCHER WORKSPACE)
+        function exportBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(globalJournalVouchers));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `Accounting_Ledger_Backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function importBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const parsedData = JSON.parse(e.target.result);
+                    if (Array.isArray(parsedData)) {
+                        if (confirm("Restore from backup? This will overwrite your current device logs.")) {
+                            const tx = db.transaction("journals", "readwrite");
+                            tx.objectStore("journals").clear();
+                            for (const jv of parsedData) {
+                                await writeJournalToDB(jv);
+                            }
+                            alert("Accounting workspace restored successfully!");
+                            window.location.reload();
+                        }
+                    } else { alert("Invalid architecture files."); }
+                } catch(err) { alert("Error reading system configuration backup matrices."); }
+            };
+            reader.readAsText(file);
+        }
+
+        // DEVICE LOCK
+        let storedSecurityPinCode = localStorage.getItem("appSecurityVaultPin") || null;
+        if (storedSecurityPinCode) {
+            document.getElementById('pinModal').classList.remove('hidden');
+        }
+
+        function verifyPin() {
+            if (document.getElementById('pinInput').value === storedSecurityPinCode) {
+                document.getElementById('pinModal').classList.add('hidden');
+            } else {
+                alert("PIN mismatch.");
+                document.getElementById('pinInput').value = '';
+            }
+        }
+
+        window.onload = () => {
+            initIndexedDBEngine();
+        };
+    </script>
+</body>
+</html>
